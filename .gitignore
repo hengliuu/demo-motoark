@@ -9,3 +9,8 @@ graphify-out/
 .wrangler/
 .ignore
 node_modules/
+
+# per-user Claude settings and skill eval scratch
+.claude/settings.json
+.claude/settings.local.json
+.claude/skill-evals/
