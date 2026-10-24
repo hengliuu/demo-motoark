@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/hengliuu/demo-motoark/api/internal/fitment"
 	"github.com/hengliuu/demo-motoark/api/internal/platform/httpx"
 )
@@ -29,6 +31,12 @@ func run(log *slog.Logger) error {
 	if port == "" {
 		port = "8080"
 	}
+
+	mode := os.Getenv(gin.EnvGinMode)
+	if mode == "" {
+		mode = gin.ReleaseMode
+	}
+	gin.SetMode(mode)
 
 	r := httpx.NewRouter(log)
 	if err := fitment.RegisterRoutes(r, log); err != nil {

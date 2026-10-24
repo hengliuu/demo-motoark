@@ -8,5 +8,6 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o
 FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=build /out/api /api
 USER nonroot:nonroot
+ENV GIN_MODE=release
 EXPOSE 8080
 ENTRYPOINT ["/api"]
