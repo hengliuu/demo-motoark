@@ -39,4 +39,6 @@ preview_pid=$!
 wait_for "http://localhost:$api_port/healthz"
 wait_for "http://localhost:$preview_port/api/healthz"
 
-BASE_URL="http://localhost:$preview_port" pnpm -C "$root/e2e" exec playwright test --grep @smoke
+# Its own report folder, so this run does not wipe the report from `make e2e` in CI.
+BASE_URL="http://localhost:$preview_port" PLAYWRIGHT_HTML_OUTPUT_DIR="$root/e2e/playwright-report-workers" \
+  pnpm -C "$root/e2e" exec playwright test --grep @smoke

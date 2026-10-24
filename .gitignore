@@ -17,6 +17,7 @@ node_modules/
 .next/
 .open-next/
 playwright-report/
+playwright-report-workers/
 test-results/
 coverage/
 web/AGENTS.md
