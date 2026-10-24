@@ -1,7 +1,8 @@
+import type { ReactElement } from "react";
 import { CircleCheck, CircleX, RefreshCw, type LucideIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
-import type { FitmentResponse, FitmentResult } from "../types";
+import type { FitmentResponse, FitmentResult } from "../types/fitment-schema";
 import { formatPartNumber } from "../utils/format";
 
 interface BannerStyle {
@@ -59,7 +60,7 @@ function bannerCopy({ result, vehicle, part, resolved }: FitmentResponse): { tit
   }
 }
 
-export function ResultBanner({ response }: { response: FitmentResponse }) {
+export function ResultBanner({ response }: { response: FitmentResponse }): ReactElement {
   const style = BANNER_STYLES[response.result];
   const { title, description } = bannerCopy(response);
   const Icon = style.icon;

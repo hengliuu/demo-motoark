@@ -1,11 +1,12 @@
 "use client";
 
+import type { ReactElement } from "react";
 import { LoaderCircle, Search } from "lucide-react";
 import type { UseFormReturn } from "react-hook-form";
 import { InputForm } from "@/components/forms";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import type { FitmentFormValues } from "../types";
+import type { FitmentFormValues } from "../types/fitment-schema";
 
 const INPUT_CLASS =
   "h-11 rounded-input border-(--fitment-line-2) bg-white px-3.5 text-[15px] md:text-[15px] placeholder:text-(color:--fitment-fg-4)";
@@ -17,7 +18,7 @@ interface FitmentFormProps {
   isPending: boolean;
 }
 
-export function FitmentForm({ form, onSubmit, isPending }: FitmentFormProps) {
+export function FitmentForm({ form, onSubmit, isPending }: FitmentFormProps): ReactElement {
   return (
     <Card className="gap-5 rounded-card bg-white p-5 ring-0 border border-(--fitment-line) md:p-7">
       <div className="flex flex-col gap-1">

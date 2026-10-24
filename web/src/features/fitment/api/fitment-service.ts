@@ -1,12 +1,11 @@
 import { apiGet, NetworkError, type ApiResult } from "@/lib/api-client";
+import { FitmentError, type FitmentErrorCode } from "../types/fitment-error";
 import {
-  FitmentError,
   fitmentErrorBodySchema,
   fitmentResponseSchema,
-  type FitmentErrorCode,
   type FitmentFormValues,
   type FitmentResponse,
-} from "../types";
+} from "../types/fitment-schema";
 import { normalizePartNumber } from "../utils/format";
 
 const FITMENT_PATH = "/api/fitment";

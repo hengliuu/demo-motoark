@@ -1,6 +1,7 @@
+import type { ReactElement } from "react";
 import Link from "next/link";
 
-export function Breadcrumb() {
+export function Breadcrumb(): ReactElement {
   return (
     <nav
       aria-label="Breadcrumb"

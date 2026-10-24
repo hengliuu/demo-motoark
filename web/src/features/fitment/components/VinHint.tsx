@@ -1,9 +1,10 @@
+import type { ReactElement } from "react";
 import { IdCard } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 const SAMPLE_VIN = "WDD2050421R123456";
 
-export function VinHint() {
+export function VinHint(): ReactElement {
   return (
     <Card className="gap-4 rounded-card bg-white p-6 ring-0 border border-(--fitment-line)">
       <div className="flex flex-col gap-1">

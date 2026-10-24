@@ -1,8 +1,9 @@
+import type { ReactElement } from "react";
 import Link from "next/link";
 
 const DEMO_TAG = "DEMO";
 
-export function NavBar() {
+export function NavBar(): ReactElement {
   return (
     <header className="bg-ink">
       <DesktopNav />
@@ -11,7 +12,7 @@ export function NavBar() {
   );
 }
 
-function DesktopNav() {
+function DesktopNav(): ReactElement {
   return (
     <nav
       aria-label="Main"
@@ -38,7 +39,7 @@ function DesktopNav() {
   );
 }
 
-function MobileNav() {
+function MobileNav(): ReactElement {
   return (
     <nav aria-label="Main" className="flex h-14 items-center gap-3 px-4 md:hidden">
       <Link href="/" className="flex items-center gap-2">

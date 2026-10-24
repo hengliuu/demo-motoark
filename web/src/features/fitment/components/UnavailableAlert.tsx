@@ -1,9 +1,10 @@
+import type { ReactElement } from "react";
 import { CloudOff, RotateCw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { FITMENT_MESSAGES } from "../constants/fitment-messages";
 
-export function UnavailableAlert({ onRetry }: { onRetry: () => void }) {
+export function UnavailableAlert({ onRetry }: { onRetry: () => void }): ReactElement {
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-center">
       <Alert className="min-w-0 flex-1 gap-y-0.5 rounded-xl border-(--fitment-red-line) bg-(--fitment-red-soft) p-4 has-[>svg]:gap-x-3">

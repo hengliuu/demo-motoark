@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactElement } from "react";
 import { Archivo, Geist_Mono, Manrope } from "next/font/google";
 import { QueryProvider } from "@/lib/query-provider";
 import "./globals.css";
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{ children: React.ReactNode }>) {
+}: Readonly<{ children: React.ReactNode }>): ReactElement {
   return (
     <html
       lang="en"

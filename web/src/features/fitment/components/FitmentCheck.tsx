@@ -1,11 +1,11 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactElement } from "react";
 import { useForm } from "react-hook-form";
 import { useCheckFitment } from "../api/use-fitment-mutations";
-import type { FitmentErrorCode, FitmentFormValues } from "../types";
-import { fitmentFormSchema } from "../types";
+import type { FitmentErrorCode } from "../types/fitment-error";
+import { fitmentFormSchema, type FitmentFormValues } from "../types/fitment-schema";
 import "../fitment-tokens.css";
 import { FitmentForm } from "./FitmentForm";
 import { FitmentResult } from "./FitmentResult";
@@ -31,7 +31,7 @@ function fieldForError(code: FitmentErrorCode): keyof FitmentFormValues | null {
   }
 }
 
-export function FitmentCheck() {
+export function FitmentCheck(): ReactElement {
   const form = useForm<FitmentFormValues>({
     resolver: zodResolver(fitmentFormSchema),
     defaultValues: EMPTY_VALUES,

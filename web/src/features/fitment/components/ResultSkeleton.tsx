@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +21,7 @@ function ListingCardSkeleton() {
   );
 }
 
-export function ResultSkeleton() {
+export function ResultSkeleton(): ReactElement {
   return (
     <div role="status" className="flex flex-col gap-6">
       <span className="sr-only">Checking fitment</span>

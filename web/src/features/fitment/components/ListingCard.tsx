@@ -1,9 +1,10 @@
+import type { ReactElement } from "react";
 import { ImageIcon, ShieldCheck, Truck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import type { FitmentListing } from "../types";
+import type { FitmentListing } from "../types/fitment-schema";
 import { formatAED, tabbySplit } from "../utils/format";
 
 const GRADE_STYLES = {
@@ -12,7 +13,7 @@ const GRADE_STYLES = {
   C: "bg-(--fitment-canvas-2) text-(color:--fitment-ink-3)",
 } satisfies Record<FitmentListing["grade"], string>;
 
-export function ListingCard({ listing }: { listing: FitmentListing }) {
+export function ListingCard({ listing }: { listing: FitmentListing }): ReactElement {
   return (
     <Card
       data-listing-id={listing.id}

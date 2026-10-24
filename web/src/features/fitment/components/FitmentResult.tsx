@@ -1,4 +1,5 @@
-import type { FitmentResponse } from "../types";
+import type { ReactElement } from "react";
+import type { FitmentResponse } from "../types/fitment-schema";
 import { ListingCard } from "./ListingCard";
 import { NoFitNextStep } from "./NoFitNextStep";
 import { ResultBanner } from "./ResultBanner";
@@ -16,7 +17,7 @@ function sellerCount(count: number, result: FitmentResponse["result"]): string {
   return count === 1 ? `1 seller has ${what}` : `${count} sellers have ${what}`;
 }
 
-export function FitmentResult({ response, searched, onNewSearch, onCheckAnother }: FitmentResultProps) {
+export function FitmentResult({ response, searched, onNewSearch, onCheckAnother }: FitmentResultProps): ReactElement {
   const { listings } = response;
 
   return (

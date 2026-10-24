@@ -1,14 +1,15 @@
+import type { ReactElement } from "react";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import type { FitmentResponse } from "../types";
+import type { FitmentResponse } from "../types/fitment-schema";
 
 interface NoFitNextStepProps {
   vehicle: FitmentResponse["vehicle"];
   onCheckAnother: () => void;
 }
 
-export function NoFitNextStep({ vehicle, onCheckAnother }: NoFitNextStepProps) {
+export function NoFitNextStep({ vehicle, onCheckAnother }: NoFitNextStepProps): ReactElement {
   return (
     <Card className="gap-4 rounded-card bg-white px-5 py-5 ring-0 border border-(--fitment-line) md:flex-row md:items-center md:gap-6 md:px-7 md:py-6">
       <div className="flex min-w-0 flex-1 flex-col gap-1">

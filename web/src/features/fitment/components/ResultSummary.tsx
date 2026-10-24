@@ -1,6 +1,7 @@
+import type { ReactElement } from "react";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { FitmentResponse } from "../types";
+import type { FitmentResponse } from "../types/fitment-schema";
 import { formatPartNumber } from "../utils/format";
 
 const EYEBROW = "text-xs leading-4 font-bold tracking-[1.2px] text-(color:--fitment-fg-4)";
@@ -12,7 +13,7 @@ interface ResultSummaryProps {
   onNewSearch: () => void;
 }
 
-export function ResultSummary({ response, searched, onNewSearch }: ResultSummaryProps) {
+export function ResultSummary({ response, searched, onNewSearch }: ResultSummaryProps): ReactElement {
   const { vehicle, part, resolved } = response;
   const isSuperseded = response.result === "superseded";
   const partName = isSuperseded ? resolved.name : part.name || resolved.name;

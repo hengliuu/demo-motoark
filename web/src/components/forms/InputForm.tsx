@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactElement } from "react";
 import { CircleX } from "lucide-react";
 import { Controller, type Control, type FieldValues, type Path } from "react-hook-form";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
@@ -30,7 +31,7 @@ export function InputForm<T extends FieldValues>({
   maxLength,
   className,
   descriptionClassName,
-}: InputFormProps<T>) {
+}: InputFormProps<T>): ReactElement {
   return (
     <Controller
       control={control}
