@@ -8,6 +8,7 @@ vi.mock("next/server", async (importOriginal) => ({
   connection: vi.fn(),
 }));
 
+import nextConfig from "../../../../next.config";
 import { GET } from "./route";
 
 const UNAVAILABLE_BODY = {
@@ -44,6 +45,7 @@ describe("GET /api/fitment", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
     vi.unstubAllEnvs();
     fetchStub.mockReset();
@@ -116,5 +118,29 @@ describe("GET /api/fitment", () => {
     expect(response.status).toBe(200);
     expect(binding.fetch).toHaveBeenCalledOnce();
     expect(fetchStub).not.toHaveBeenCalled();
+  });
+
+  it("MOTO-01-TC21 an upstream failure logs nothing that holds the VIN", async () => {
+    const calledUrl = "http://api.test/v1/fitment?part=A0004204102&vin=WDD2050421R123456";
+    fetchStub.mockRejectedValue(new TypeError(`fetch failed for ${calledUrl}`, { cause: new Error(calledUrl) }));
+    const logged = [
+      vi.spyOn(console, "error").mockImplementation(() => {}),
+      vi.spyOn(console, "warn").mockImplementation(() => {}),
+      vi.spyOn(console, "log").mockImplementation(() => {}),
+    ];
+
+    const response = await GET(request());
+
+    expect(response.status).toBe(503);
+    const loggedText = logged.flatMap((spy) => spy.mock.calls.flat()).map(String);
+    expect(loggedText.length).toBeGreaterThan(0);
+    expect(loggedText.join("\n")).not.toContain("R123456");
+  });
+
+  it("MOTO-01-TC21 the Next request log skips /api/fitment, where the query string holds the VIN", () => {
+    const incoming = typeof nextConfig.logging === "object" ? nextConfig.logging.incomingRequests : undefined;
+    const ignore = typeof incoming === "object" ? (incoming.ignore ?? []) : [];
+
+    expect(ignore.some((pattern) => pattern.test("/api/fitment?part=A0004204102&vin=WDD2050421R123456"))).toBe(true);
   });
 });

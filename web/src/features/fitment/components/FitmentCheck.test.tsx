@@ -101,13 +101,18 @@ describe("FitmentCheck", () => {
     expect(screen.getByText("2 sellers have this part")).toBeInTheDocument();
   });
 
-  it("MOTO-01-TC04 the request carries the normalised part number and the uppercased VIN", async () => {
+  it("MOTO-01-TC04 the request carries the normalised part number", async () => {
     const fetchMock = stubFetch(jsonResponse(FITS_BODY));
-    await fillAndSubmit("a-000.420 41 02", "wdd2050421r123456");
+    await fillAndSubmit("a-000.420 41 02", "WDD2050421R123456");
     await screen.findByText("Fits your vehicle");
-    const url = String(fetchMock.mock.calls[0]?.[0]);
-    expect(url).toContain("part=A0004204102");
-    expect(url).toContain("vin=WDD2050421R123456");
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain("part=A0004204102");
+  });
+
+  it("MOTO-01-TC17 the request carries the VIN trimmed and uppercased", async () => {
+    const fetchMock = stubFetch(jsonResponse(FITS_BODY));
+    await fillAndSubmit("A0004204102", "  wdd2050421r123456 ");
+    await screen.findByText("Fits your vehicle");
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain("vin=WDD2050421R123456");
   });
 
   it("MOTO-01-TC02 a superseded part shows the amber banner with the old and the new number", async () => {
@@ -187,6 +192,20 @@ describe("FitmentCheck", () => {
       await screen.findByText("We couldn't find this VIN. Check it against your registration card"),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("VIN")).toHaveValue("WDD2050421R999999");
+  });
+
+  it.each([
+    { code: "invalid_vin", message: "Enter the 17-character VIN from your registration card", label: "VIN" },
+    { code: "invalid_part", message: "Enter a part number", label: "Part number" },
+  ])("MOTO-01-TC19 a server 400 $code shows its message under $label", async ({ code, message, label }) => {
+    stubFetch(jsonResponse({ error: { code, message } }, 400));
+    await fillAndSubmit("A0004204102", "WDD2050421R123456");
+
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(screen.getByLabelText(label)).toHaveAccessibleDescription(message);
+    expect(screen.getByLabelText(label)).toBeInvalid();
+    expect(screen.queryByText("Fitment check is unavailable right now")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument();
   });
 
   it("MOTO-01-TC10 an unavailable API shows Try again, and Try again retries the same values", async () => {
