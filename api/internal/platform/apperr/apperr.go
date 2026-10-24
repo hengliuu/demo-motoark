@@ -1,5 +1,5 @@
 // Package apperr holds the error kinds the HTTP layer understands. Domain packages build
-// these from their own sentinels, so this package never imports a domain.
+// their sentinel errors with these constructors, so this package never imports a domain.
 package apperr
 
 import "net/http"

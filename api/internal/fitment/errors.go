@@ -1,9 +1,9 @@
 package fitment
 
-import "errors"
+import "github.com/hengliuu/demo-motoark/api/internal/platform/apperr"
 
 var (
-	ErrInvalidPart = errors.New("fitment: invalid part number")
-	ErrInvalidVIN  = errors.New("fitment: invalid VIN")
-	ErrUnknownVIN  = errors.New("fitment: unknown VIN")
+	ErrInvalidPart = apperr.Invalid("invalid_part", "Enter a part number", nil)
+	ErrInvalidVIN  = apperr.Invalid("invalid_vin", "Enter the 17-character VIN from your registration card", nil)
+	ErrUnknownVIN  = apperr.NotFound("unknown_vin", "We couldn't find this VIN. Check it against your registration card", nil)
 )
