@@ -1,0 +1,9 @@
+packages:
+  - web
+  - e2e
+  - api/worker
+
+allowBuilds:
+  unrs-resolver: true
+  esbuild: true
+  workerd: true
