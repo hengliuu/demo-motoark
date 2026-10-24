@@ -56,6 +56,9 @@ jobs:
 
       - run: pnpm -C e2e exec playwright test
 
+      - name: Smoke tests on the Workers runtime (OpenNext preview)
+        run: make e2e-workers
+
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
