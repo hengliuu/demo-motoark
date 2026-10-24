@@ -141,16 +141,41 @@ func TestFitmentHandler(t *testing.T) {
 		}
 	})
 
+	t.Run("MOTO-01-TC14 a part outside the catalogue answers 200 no_fit with empty names and no listings", func(t *testing.T) {
+		rec := get(t, "Z9999999999", goodVIN)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status = %d, body %s", rec.Code, rec.Body)
+		}
+		body := decode(t, rec)
+		if body["result"] != "no_fit" {
+			t.Fatalf("result = %v", body["result"])
+		}
+		if p := body["part"].(map[string]any); p["number"] != "Z9999999999" || p["name"] != "" {
+			t.Fatalf("part = %v", p)
+		}
+		if r := body["resolved"].(map[string]any); r["number"] != "Z9999999999" || r["name"] != "" {
+			t.Fatalf("resolved = %v", r)
+		}
+		if ls, ok := body["listings"].([]any); !ok || len(ls) != 0 {
+			t.Fatalf("listings = %#v, want []", body["listings"])
+		}
+	})
+
+	t.Run("MOTO-01-TC18 a VIN of the wrong length answers 400 invalid_vin", func(t *testing.T) {
+		assertError(t, get(t, "A0004204102", "WDD2050421R12345"), http.StatusBadRequest, "invalid_vin",
+			"Enter the 17-character VIN from your registration card")
+	})
+
 	t.Run("MOTO-01-TC06 a VIN with an excluded letter returns 400 invalid_vin", func(t *testing.T) {
 		assertError(t, get(t, "A0004204102", "WDD2050421R12345I"), http.StatusBadRequest, "invalid_vin",
 			"Enter the 17-character VIN from your registration card")
 	})
 
-	t.Run("a blank part number returns 400 invalid_part", func(t *testing.T) {
+	t.Run("MOTO-01-TC15 a blank part number returns 400 invalid_part", func(t *testing.T) {
 		assertError(t, get(t, "  ", goodVIN), http.StatusBadRequest, "invalid_part", "Enter a part number")
 	})
 
-	t.Run("a missing query returns 400 invalid_part", func(t *testing.T) {
+	t.Run("MOTO-01-TC15 a missing query returns 400 invalid_part", func(t *testing.T) {
 		rec := httptest.NewRecorder()
 		newRouter(t).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/v1/fitment", nil))
 		assertError(t, rec, http.StatusBadRequest, "invalid_part", "Enter a part number")

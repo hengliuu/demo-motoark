@@ -44,7 +44,7 @@ func TestNormalizePart(t *testing.T) {
 		})
 	}
 	for _, in := range []string{"", " - . ", "A205/9062203"} {
-		t.Run("MOTO-01-TC04 rejects "+in, func(t *testing.T) {
+		t.Run("MOTO-01-TC15 rejects "+in, func(t *testing.T) {
 			if _, err := s.NormalizePart(in); !errors.Is(err, ErrInvalidPart) {
 				t.Fatalf("got %v", err)
 			}
@@ -55,13 +55,13 @@ func TestNormalizePart(t *testing.T) {
 func TestValidateVIN(t *testing.T) {
 	s := New(fakeRepo{})
 	for _, in := range []string{"WDD2050421R12345I", "WDD2050421R12345O", "WDD2050421R12345Q", "WDD2050421R12345", "WDD2050421R1234567"} {
-		t.Run("MOTO-01-TC06 rejects "+in, func(t *testing.T) {
+		t.Run("MOTO-01-TC18 rejects "+in, func(t *testing.T) {
 			if _, err := s.ValidateVIN(in); !errors.Is(err, ErrInvalidVIN) {
 				t.Fatalf("got %v", err)
 			}
 		})
 	}
-	t.Run("MOTO-01-TC06 trims and uppercases a valid VIN", func(t *testing.T) {
+	t.Run("MOTO-01-TC17 trims and uppercases a valid VIN", func(t *testing.T) {
 		got, err := s.ValidateVIN("  wdd2050421r123456 ")
 		if err != nil || got != seedVIN {
 			t.Fatalf("got %q, %v", got, err)
@@ -137,7 +137,7 @@ func TestCheck(t *testing.T) {
 		}
 	})
 
-	t.Run("MOTO-01-TC03 a part outside the catalogue is no fit with an empty name", func(t *testing.T) {
+	t.Run("MOTO-01-TC14 a part outside the catalogue is no fit with an empty name", func(t *testing.T) {
 		r, err := s.Check(ctx, CheckParams{Part: "Z9999999999", VIN: seedVIN})
 		if err != nil {
 			t.Fatal(err)
@@ -153,10 +153,13 @@ func TestCheck(t *testing.T) {
 		}
 	})
 
-	t.Run("MOTO-01-TC06 Check rejects bad input", func(t *testing.T) {
+	t.Run("MOTO-01-TC06 Check rejects a VIN with an excluded letter", func(t *testing.T) {
 		if _, err := s.Check(ctx, CheckParams{Part: "A0004204102", VIN: "WDD2050421R12345O"}); !errors.Is(err, ErrInvalidVIN) {
 			t.Fatalf("vin: %v", err)
 		}
+	})
+
+	t.Run("MOTO-01-TC15 Check rejects a blank part number", func(t *testing.T) {
 		if _, err := s.Check(ctx, CheckParams{Part: " ", VIN: seedVIN}); !errors.Is(err, ErrInvalidPart) {
 			t.Fatalf("part: %v", err)
 		}
