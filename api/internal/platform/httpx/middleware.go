@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
@@ -16,6 +17,12 @@ const (
 	requestIDHeader = "X-Request-ID"
 	requestIDKey    = "request_id"
 	maskedVINKeep   = 11
+	maskedVINTail   = "******"
+)
+
+var (
+	loggedQueryKeys = []string{"part", "vin"}
+	vinShape        = regexp.MustCompile(`^[A-HJ-NPR-Z0-9]{17}$`)
 )
 
 func WithRequestID() gin.HandlerFunc {
@@ -51,8 +58,7 @@ func newRequestID() string {
 	return hex.EncodeToString(b)
 }
 
-// Logging writes one line per request. The VIN in the query is masked: the first 11
-// characters stay, the rest become '*'.
+// Logging writes one line per request. The query is rebuilt by LogQuery, never copied.
 func Logging(log *slog.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
@@ -61,7 +67,7 @@ func Logging(log *slog.Logger) gin.HandlerFunc {
 			slog.String("request_id", RequestID(c)),
 			slog.String("method", c.Request.Method),
 			slog.String("path", c.Request.URL.Path),
-			slog.String("query", MaskQuery(c.Request.URL.RawQuery)),
+			slog.String("query", LogQuery(c.Request.URL.RawQuery)),
 			slog.Int("status", c.Writer.Status()),
 			slog.Duration("latency", time.Since(start)),
 		)
@@ -83,32 +89,30 @@ func Recovery(log *slog.Logger) gin.HandlerFunc {
 	}
 }
 
-// MaskQuery masks the value of every vin parameter, whatever the key's case.
-func MaskQuery(raw string) string {
-	if raw == "" {
-		return ""
-	}
-	pairs := strings.Split(raw, "&")
-	for i, p := range pairs {
-		k, v, found := strings.Cut(p, "=")
-		if !found {
-			continue
-		}
-		if key, err := url.QueryUnescape(k); err == nil && strings.EqualFold(key, "vin") {
-			pairs[i] = k + "=" + maskVIN(v)
+// LogQuery returns the part of the query that is safe to log. It never echoes the raw query:
+// only the keys in loggedQueryKeys appear, so a VIN under any other key is dropped, and a
+// VIN-shaped value under a logged key is masked too.
+func LogQuery(raw string) string {
+	// ParseQuery returns the pairs it could read together with its error. A pair it rejects,
+	// such as one joined by ';', is dropped and never logged.
+	values, _ := url.ParseQuery(raw)
+	var parts []string
+	for _, key := range loggedQueryKeys {
+		for _, v := range values[key] {
+			parts = append(parts, key+"="+logValue(key, v))
 		}
 	}
-	return strings.Join(pairs, "&")
+	return strings.Join(parts, "&")
 }
 
-func maskVIN(raw string) string {
-	v, err := url.QueryUnescape(raw)
-	if err != nil {
-		v = raw
+func logValue(key, v string) string {
+	if key == "vin" || vinShape.MatchString(strings.ToUpper(strings.TrimSpace(v))) {
+		return maskVIN(v)
 	}
+	return url.QueryEscape(v)
+}
+
+func maskVIN(v string) string {
 	v = strings.TrimSpace(v)
-	if len(v) <= maskedVINKeep {
-		return strings.Repeat("*", len(v))
-	}
-	return v[:maskedVINKeep] + strings.Repeat("*", len(v)-maskedVINKeep)
+	return url.QueryEscape(v[:min(len(v), maskedVINKeep)]) + maskedVINTail
 }

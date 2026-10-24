@@ -51,6 +51,26 @@ func TestRequestLogging(t *testing.T) {
 		}
 	})
 
+	t.Run("MOTO-01-TC13 a VIN in the part parameter is masked and unknown keys are not logged", func(t *testing.T) {
+		var buf bytes.Buffer
+		newRouter(&buf).ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/v1/fitment?part=WDD2050421R123456&vin=A0004204102&token=secret-value", nil))
+		out := buf.String()
+		if strings.Contains(out, "R123456") || strings.Contains(out, "secret-value") || strings.Contains(out, "token") {
+			t.Fatalf("log leaks a VIN or an unknown key: %s", out)
+		}
+		if !strings.Contains(out, "WDD2050421R******") {
+			t.Fatalf("log lacks the masked VIN-shaped part: %s", out)
+		}
+	})
+
+	t.Run("MOTO-01-TC13 a semicolon-joined query does not leak the VIN", func(t *testing.T) {
+		var buf bytes.Buffer
+		newRouter(&buf).ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/v1/fitment?part=A1;vin=WDD2050421R123456", nil))
+		if out := buf.String(); strings.Contains(out, "R123456") {
+			t.Fatalf("log leaks the VIN tail: %s", out)
+		}
+	})
+
 	t.Run("MOTO-01-TC13 a panic log does not carry the VIN", func(t *testing.T) {
 		var buf bytes.Buffer
 		r := httpx.NewRouter(slog.New(slog.NewTextHandler(&buf, nil)))
