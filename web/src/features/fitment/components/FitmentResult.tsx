@@ -8,6 +8,7 @@ interface FitmentResultProps {
   response: FitmentResponse;
   searched: string;
   onNewSearch: () => void;
+  onCheckAnother: () => void;
 }
 
 function sellerCount(count: number, result: FitmentResponse["result"]): string {
@@ -15,7 +16,7 @@ function sellerCount(count: number, result: FitmentResponse["result"]): string {
   return count === 1 ? `1 seller has ${what}` : `${count} sellers have ${what}`;
 }
 
-export function FitmentResult({ response, searched, onNewSearch }: FitmentResultProps) {
+export function FitmentResult({ response, searched, onNewSearch, onCheckAnother }: FitmentResultProps) {
   const { listings } = response;
 
   return (
@@ -23,7 +24,7 @@ export function FitmentResult({ response, searched, onNewSearch }: FitmentResult
       <ResultBanner response={response} />
       <ResultSummary response={response} searched={searched} onNewSearch={onNewSearch} />
       {response.result === "no_fit" ? (
-        <NoFitNextStep vehicle={response.vehicle} onCheckAnother={onNewSearch} />
+        <NoFitNextStep vehicle={response.vehicle} onCheckAnother={onCheckAnother} />
       ) : (
         listings.length > 0 && (
           <section aria-labelledby="listings-heading" className="flex flex-col gap-6">

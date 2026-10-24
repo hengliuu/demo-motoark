@@ -1,7 +1,6 @@
-import { ArrowRight, Search } from "lucide-react";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 import type { FitmentResponse } from "../types";
 
 interface NoFitNextStepProps {
@@ -9,16 +8,13 @@ interface NoFitNextStepProps {
   onCheckAnother: () => void;
 }
 
-// There is no search page in the demo, so the link stays on "#".
-const SEARCH_BY_VEHICLE_HREF = "#";
-
 export function NoFitNextStep({ vehicle, onCheckAnother }: NoFitNextStepProps) {
   return (
     <Card className="gap-4 rounded-card bg-white px-5 py-5 ring-0 border border-(--fitment-line) md:flex-row md:items-center md:gap-6 md:px-7 md:py-6">
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <h2 className="text-lg leading-[26px] font-bold text-ink">Find parts that fit your {vehicle.model}</h2>
         <p className="text-[15px] leading-[22px] text-(color:--fitment-fg-2)">
-          Browse parts listed for the {vehicle.chassis} chassis, or check another part number.
+          Check another part number for your {vehicle.model} ({vehicle.chassis}). Your VIN stays filled in.
         </p>
       </div>
       <Button
@@ -30,16 +26,6 @@ export function NoFitNextStep({ vehicle, onCheckAnother }: NoFitNextStepProps) {
         <Search aria-hidden className="size-[18px]" />
         Check another part
       </Button>
-      <a
-        href={SEARCH_BY_VEHICLE_HREF}
-        className={cn(
-          buttonVariants(),
-          "h-11 gap-2 rounded-input bg-ink px-[18px] text-[15px] font-bold text-white hover:bg-ink/90",
-        )}
-      >
-        <ArrowRight aria-hidden className="size-[18px]" />
-        Search parts for your {vehicle.model} ({vehicle.chassis})
-      </a>
     </Card>
   );
 }

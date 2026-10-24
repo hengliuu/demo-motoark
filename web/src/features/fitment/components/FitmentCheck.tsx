@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useCheckFitment } from "../api/use-fitment-mutations";
 import type { FitmentErrorCode, FitmentFormValues } from "../types";
@@ -36,6 +37,13 @@ export function FitmentCheck() {
     defaultValues: EMPTY_VALUES,
   });
   const check = useCheckFitment();
+  const shouldFocusPart = useRef(false);
+
+  useEffect(() => {
+    if (!shouldFocusPart.current || check.isSuccess) return;
+    shouldFocusPart.current = false;
+    form.setFocus("part");
+  }, [check.isSuccess, form]);
 
   function submit(values: FitmentFormValues) {
     check.mutate(values, {
@@ -51,6 +59,13 @@ export function FitmentCheck() {
     form.reset(EMPTY_VALUES);
   }
 
+  function checkAnotherPart() {
+    const vin = check.variables?.vin ?? "";
+    check.reset();
+    form.reset({ part: "", vin });
+    shouldFocusPart.current = true;
+  }
+
   function retry() {
     if (check.variables) submit(check.variables);
   }
@@ -58,7 +73,7 @@ export function FitmentCheck() {
   return (
     <main className="mx-auto flex w-full max-w-[1200px] flex-col gap-8 px-4 py-8 md:px-8 md:py-12">
       {check.isSuccess ? (
-        <FitmentResult response={check.data} searched={check.variables.part} onNewSearch={startNewSearch} />
+        <FitmentResult response={check.data} searched={check.variables.part} onNewSearch={startNewSearch} onCheckAnother={checkAnotherPart} />
       ) : (
         <>
           <header className="flex flex-col gap-2.5">

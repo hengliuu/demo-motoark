@@ -149,12 +149,27 @@ describe("FitmentCheck", () => {
     expect(screen.queryByRole("button", { name: /sort/i })).not.toBeInTheDocument();
   });
 
-  it("MOTO-01-TC03 a part that does not fit shows the red banner and a link to search by vehicle", async () => {
+  it("MOTO-01-TC03 a part that does not fit shows the red banner and a way to check another part", async () => {
     stubFetch(jsonResponse(NO_FIT_BODY));
     await fillAndSubmit("A1669060103", "WDD2050421R123456");
     expect(await screen.findByText("Does not fit this vehicle")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Search parts for your C 200 (W205)" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Find parts that fit your C 200" })).toBeInTheDocument();
+    expect(
+      screen.getByText("Check another part number for your C 200 (W205). Your VIN stays filled in."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Check another part" })).toBeInTheDocument();
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
     expect(screen.queryByText(/sellers? has? this part|sellers have this part/)).not.toBeInTheDocument();
+  });
+
+  it("MOTO-01-TC03 check another part keeps the VIN and clears the part number", async () => {
+    stubFetch(jsonResponse(NO_FIT_BODY));
+    const user = await fillAndSubmit("A1669060103", "WDD2050421R123456");
+    await user.click(await screen.findByRole("button", { name: "Check another part" }));
+    expect(screen.queryByText("Does not fit this vehicle")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("VIN")).toHaveValue("WDD2050421R123456");
+    expect(screen.getByLabelText("Part number")).toHaveValue("");
+    expect(screen.getByLabelText("Part number")).toHaveFocus();
   });
 
   it("MOTO-01-TC07 an unknown VIN shows the message under the VIN field and keeps the form", async () => {
