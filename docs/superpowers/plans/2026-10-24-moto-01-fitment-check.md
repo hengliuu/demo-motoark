@@ -124,7 +124,8 @@ code against them.
 - [ ] `api/worker/`: Worker plus `wrangler.jsonc` with a `containers` entry (`image: ../Dockerfile`), the Durable Object binding and `new_sqlite_classes` migration, routing every request to the container. Envs `staging` and `production`.
 - [ ] `web/`: OpenNext config and `wrangler.jsonc` with a service binding `API` to the api Worker, envs `staging` and `production`.
 - [ ] `deploy.yml` on push to `main` only: a `staging` job with `environment: staging` deploys api then web and runs `playwright test --grep @smoke` against the staging URL. A `production` job with `environment: production` waits for the required reviewer, then deploys. Cloudflare credentials come from environment secrets, never from repo secrets or code.
-- [ ] Check: `wrangler deploy --dry-run` succeeds for both Workers, `actionlint` passes.
+- [ ] Every Worker name starts with `motoark-demo-` (for example `motoark-demo-web-staging`, `motoark-demo-api-production`). The Cloudflare account is shared, so `deploy.yml` first runs a guard step that fails when any `name` in a `wrangler.jsonc`, top level or per env, lacks that prefix.
+- [ ] Check: `wrangler deploy --dry-run` succeeds for both Workers, the guard fails on a wrong name and passes on the real config, `actionlint` passes.
 
 ### Task 9: Review
 
@@ -148,7 +149,7 @@ code against them.
 | 5 | Routes | 3, 4 | `web/src/app/**` | worker | high | build, each state renders |
 | 6 | End-to-end tests | 5 | `e2e/**` specs | worker | medium | `playwright test` |
 | 7 | CI | 1 | `.github/workflows/ci.yml` | chore | medium | actionlint, green run on the pull request |
-| 8 | Cloudflare deploy | 1 | `api/Dockerfile`, `api/worker/**`, `web/wrangler.jsonc`, `web/open-next.config.ts`, `.github/workflows/deploy.yml` | worker | medium | `wrangler deploy --dry-run` both, actionlint |
+| 8 | Cloudflare deploy | 1 | `api/Dockerfile`, `api/worker/**`, `web/wrangler.jsonc`, `web/open-next.config.ts`, `.github/workflows/deploy.yml` | worker | medium | `wrangler deploy --dry-run` both, name guard, actionlint |
 | 9 | Review | 2 to 8 | none (read only) | reviewer | high | findings list with file and line |
 | 10 | QA record | 6, 9 | none in the repo, the test case sheet | main session | medium | sheet updated, one row in Runs |
 

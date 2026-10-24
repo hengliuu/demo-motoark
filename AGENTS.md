@@ -38,6 +38,9 @@ and `go-backend-patterns` for `api/`. Two deliberate differences in this repo:
   FSD, secrets and logging, then the stack skills.
 - Never touch `.github/workflows/deploy.yml` outside its plan task, and never deploy. Deploys
   run from GitHub Actions only.
+- The Cloudflare account is shared with another product. Every Worker, container and binding
+  name in a `wrangler.jsonc` starts with `motoark-demo-`. Never reference, list or change any
+  other Worker.
 
 ## Commands
 
