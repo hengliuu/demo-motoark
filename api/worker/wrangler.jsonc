@@ -1,0 +1,53 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "motoark-demo-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-24",
+  "containers": [
+    {
+      "name": "motoark-demo-api",
+      "class_name": "ApiContainer",
+      "image": "../Dockerfile",
+      "image_build_context": "..",
+      "max_instances": 2
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "API_CONTAINER", "class_name": "ApiContainer" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ApiContainer"] }],
+  "env": {
+    "staging": {
+      "name": "motoark-demo-api-staging",
+      "containers": [
+        {
+          "name": "motoark-demo-api-staging",
+          "class_name": "ApiContainer",
+          "image": "../Dockerfile",
+          "image_build_context": "..",
+          "max_instances": 2
+        }
+      ],
+      "durable_objects": {
+        "bindings": [{ "name": "API_CONTAINER", "class_name": "ApiContainer" }]
+      },
+      "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ApiContainer"] }]
+    },
+    "production": {
+      "name": "motoark-demo-api-production",
+      "containers": [
+        {
+          "name": "motoark-demo-api-production",
+          "class_name": "ApiContainer",
+          "image": "../Dockerfile",
+          "image_build_context": "..",
+          "max_instances": 5
+        }
+      ],
+      "durable_objects": {
+        "bindings": [{ "name": "API_CONTAINER", "class_name": "ApiContainer" }]
+      },
+      "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ApiContainer"] }]
+    }
+  }
+}
