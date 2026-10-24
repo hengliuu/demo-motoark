@@ -1,0 +1,11 @@
+notes/
+graft/
+graphify-out/
+.DS_Store
+
+# secrets and local tool state
+.env*
+.dev.vars
+.wrangler/
+.ignore
+node_modules/
