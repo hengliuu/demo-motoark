@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Archivo, Geist_Mono, Manrope } from "next/font/google";
+import { QueryProvider } from "@/lib/query-provider";
 import "./globals.css";
 
 const archivo = Archivo({
@@ -29,7 +30,7 @@ export default function RootLayout({
       lang="en"
       className={`${archivo.variable} ${manrope.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col"><QueryProvider>{children}</QueryProvider></body>
     </html>
   );
 }
