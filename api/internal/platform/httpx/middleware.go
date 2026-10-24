@@ -22,6 +22,7 @@ const (
 
 var (
 	loggedQueryKeys = []string{"part", "vin"}
+	partSeparators  = strings.NewReplacer(" ", "", ".", "", "-", "")
 	vinShape        = regexp.MustCompile(`^[A-HJ-NPR-Z0-9]{17}$`)
 )
 
@@ -106,8 +107,11 @@ func LogQuery(raw string) string {
 }
 
 func logValue(key, v string) string {
-	if key == "vin" || vinShape.MatchString(strings.ToUpper(strings.TrimSpace(v))) {
+	if key == "vin" {
 		return maskVIN(v)
+	}
+	if stripped := partSeparators.Replace(v); vinShape.MatchString(strings.ToUpper(strings.TrimSpace(stripped))) {
+		return maskVIN(stripped)
 	}
 	return url.QueryEscape(v)
 }

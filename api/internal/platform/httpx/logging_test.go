@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -70,6 +71,17 @@ func TestRequestLogging(t *testing.T) {
 			t.Fatalf("log leaks the VIN tail: %s", out)
 		}
 	})
+
+	for _, part := range []string{"WDD 2050421R123456", "WDD-2050421-R123456", "WDD.2050421.R123456"} {
+		t.Run("MOTO-01-TC13 a VIN typed into the part field with separators is masked: "+part, func(t *testing.T) {
+			var buf bytes.Buffer
+			q := url.Values{"part": {part}, "vin": {"WDD2050421R123456"}}
+			newRouter(&buf).ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/v1/fitment?"+q.Encode(), nil))
+			if out := buf.String(); strings.Contains(out, "R123456") {
+				t.Fatalf("log leaks the VIN tail: %s", out)
+			}
+		})
+	}
 
 	t.Run("MOTO-01-TC13 a panic log does not carry the VIN", func(t *testing.T) {
 		var buf bytes.Buffer
