@@ -48,6 +48,9 @@ Check the barrel first. Typical set:
 
 Extend an existing wrapper with an optional prop rather than forking a near-duplicate.
 
+Custom atoms in `components/base/` (component-layers.md) get a wrapper here too, in the same
+change that adds the atom, for example `CheckboxCardForm` wrapping `base/CheckboxCard`.
+
 ## The wrapper contract
 
 ### Field style (current shadcn)

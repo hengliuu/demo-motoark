@@ -7,8 +7,8 @@ description: Module-first (feature-based) patterns for Go backend services and w
 
 A service is a set of **business modules**. Each module is one Go package that owns its whole
 vertical slice: HTTP handler, service, repository, queue consumer, and tests. Infrastructure
-that every module uses lives in `internal/platform/`. Binaries in `cmd/` are the only place
-modules get wired together.
+that every module uses lives in `internal/platform/`. `internal/app/container.go` is the only place
+modules get wired together, and both binaries in `cmd/` use it.
 
 Placeholders: `<module>` is the service's own Go module path (from `go.mod`), `<org>/shared`
 is the org's shared utilities module. Read the project's `AGENTS.md` or `CLAUDE.md` first: it
@@ -19,8 +19,8 @@ wins on project facts (module path, ORM, response envelope, auth).
 ```
 <service>/
   cmd/
-    api/main.go              HTTP binary: config, db, modules, router, graceful shutdown
-    worker/main.go           worker binary: same modules, consumers and relays instead of routes
+    api/main.go              HTTP binary: config, app.New, router, graceful shutdown
+    worker/main.go           worker binary: same container, consumers and relays instead of routes
   internal/
     order/                   one business module = one package (singular, lowercase)
       module.go              Deps, New(), RegisterRoutes(), RegisterConsumers()
@@ -36,6 +36,9 @@ wins on project facts (module path, ORM, response envelope, auth).
       service_test.go        unit tests with fakes
       repository_test.go     integration tests against real Postgres
     invoice/
+    app/
+      container.go           the one wiring file: infrastructure + one line per module
+    api/gen/                 generated OpenAPI code, if the project uses oapi-codegen
     platform/                infrastructure only, never business rules
       database/              Open, Transactor (WithinTx, WithinTenantTx), Conn(ctx, db)
       apperr/                error kinds shared by all modules (NotFound, Invalid, Conflict...)
@@ -54,31 +57,38 @@ encapsulation for free (unexported repository and helpers cannot be imported by 
 
 1. **One package per module, files per layer.** Grow by splitting files
    (`service_checkout.go`, `handler_admin.go`), not by creating sub-packages. Sub-packages
-   force everything to be exported and bring back layer-first inside the module.
+   force everything to be exported and bring back layer-first inside the module. The one
+   exception is generated code (`internal/order/orderdb/` from sqlc), which nobody edits.
 2. **Name things for the package.** `order.Service`, `order.New`, `order.ErrNotFound`, never
    `order.OrderService` (it stutters at every call site).
 3. **Export the module's API only:** `Deps`, `New`, `Module`, `Service` and its methods, the
    params and model types those methods use, and the errors. The repository implementation,
    DTOs, handler and helpers stay unexported.
-4. **Modules talk through services, never through repositories or tables.** Module B declares
+4. **Register in one place.** `module.go` builds the module's handler, service and repository
+   and registers its routes and consumers. `internal/app/container.go` adds one line per module.
+   There is no service container, controller container or routes folder to keep in sync.
+5. **Modules talk through services, never through repositories or tables.** Module B declares
    the small interface it needs (consumer-defined, unexported) and `cmd/` passes module A's
    `*Service` into B's `Deps`. Details in references/module-layout.md.
-5. **No import cycles, by design.** If A imports B and B needs A, the shared behaviour belongs
+6. **No import cycles, by design.** If A imports B and B needs A, the shared behaviour belongs
    in a third module, an event (outbox), or an interface on one side with its own types.
-6. **`platform/` never imports a module.** It is infrastructure. Business rules there are a
+7. **`platform/` never imports a module.** It is infrastructure. Business rules there are a
    module hiding in the wrong folder. `scripts/check_boundaries.sh` checks both directions.
-7. **`context.Context` is the first parameter** of every service, repository, consumer and
+8. **`context.Context` is the first parameter** of every service, repository, consumer and
    client method. Handlers pass `c.Request.Context()`. Without it, timeouts, cancellation,
    tracing and the transaction in context are all lost.
-8. **Services return `error`, not HTTP.** Domain errors wrap an `apperr` kind, and
+9. **Services return `error`, not HTTP.** Domain errors wrap an `apperr` kind, and
    `httpx.WriteError` maps kinds to status codes once. The same service then works unchanged
    behind HTTP, gRPC and a queue consumer.
-9. **Transactions are opened by the service** with `Transactor.WithinTx(ctx, fn)`. Repositories
+10. **Transactions are opened by the service** with `Transactor.WithinTx(ctx, fn)`. Repositories
    read the transaction from the context with `database.Conn(ctx, r.db)`. A service calling
    another module's service inside `WithinTx` joins the same transaction.
-10. **Handlers are thin:** bind and validate shape, read identity from context, map DTO to
+11. **Handlers are thin:** bind and validate shape, read identity from context, map DTO to
     params, call one service method, map the result. No business rules, no database.
-11. **Log once, at the boundary.** The handler or consumer logs failures with request context.
+12. **Check for code generators before writing a handler, DTO or query by hand.** If the
+    project has oapi-codegen, sqlc, swag or protobuf, change the source and regenerate
+    (codegen.md). Hand-written code next to a generator gets overwritten or contradicts it.
+13. **Log once, at the boundary.** The handler or consumer logs failures with request context.
     Services and repositories wrap errors with `fmt.Errorf("...: %w", err)` and return them.
     Logging and returning the same error produces duplicate log lines for one failure.
 
@@ -90,6 +100,7 @@ project, mention the difference, and don't refactor without being asked:
 | Project already has | Do this |
 |---|---|
 | Layer-first folders (`controller/`, `service/<entity>/`, `repository/<entity>/`) | Follow them for changes. For a migration plan, see references/module-layout.md "Moving from layer-first" |
+| `ServiceContainer` + `ControllerContainer` + `routes/<entity>_routes.go` | Register a new entity in all three, the way the others are. For moving to modules, see module-layout.md "Coming from container/" |
 | Services returning `*response.HTTPError` | Keep returning it in that project. Consistency beats this skill |
 | Explicit `tx` arguments with `pgtx`/`gormtx` | Keep passing `tx`. The ctx-based `Transactor` is for new code |
 | `<org>/shared/logger` | Use it instead of `log/slog` |
@@ -100,6 +111,8 @@ project, mention the difference, and don't refactor without being asked:
 | Task | Read |
 |---|---|
 | New module, or "how should this service be structured" | module-layout.md, then handler.md, service.md, repository-gorm.md |
+| Wiring, the container, registering a module, coming from controller and service containers | module-layout.md (container.go section) |
+| oapi-codegen, sqlc, swag, protobuf, mocks, `go:generate`, `go tool` | codegen.md |
 | New endpoint on an existing module | handler.md, service.md |
 | New business rule, validation, domain error | service.md |
 | New query, filter, sort, pagination, field | repository-gorm.md (or repository-gopg.md) |
@@ -142,8 +155,11 @@ instead of implying it passed.
 ## References
 
 - [references/module-layout.md](references/module-layout.md): layout, naming, exports,
-  `module.go` wiring, `cmd/api` and `cmd/worker`, cross-module calls, when to split, moving from
+  `module.go`, the one-file `internal/app/container.go`, `cmd/api` and `cmd/worker`, mapping
+  from controller and service containers, cross-module calls, when to split, moving from
   layer-first.
+- [references/codegen.md](references/codegen.md): detecting and running oapi-codegen, sqlc,
+  swag, protobuf and mock generators, `go tool` pinning, where generated packages live.
 - [references/handler.md](references/handler.md): Gin handlers, DTOs, binding, identity from
   context, pagination response, Swagger annotations.
 - [references/service.md](references/service.md): service struct, params, validation, domain

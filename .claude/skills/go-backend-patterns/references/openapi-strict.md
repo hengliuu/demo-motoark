@@ -10,6 +10,10 @@
 
 ## When to use
 
+Generator setup (config file, `go tool` pinning, where the generated package lives) is in
+codegen.md. This file covers implementing and wiring the generated interface.
+
+
 The project generates its HTTP layer from an OpenAPI document with `oapi-codegen`
 (`gin-server`, `strict-server` and `models` generators). The OpenAPI document is then the
 contract, and handler.md (hand-written Gin handlers, DTOs, swag comments) does not apply.
@@ -119,7 +123,8 @@ The identity reaches `ctx` because the auth middleware stores it on the Gin cont
 ## Wiring and error mapping
 
 ```go
-server := api.Server{OrderAPI: orders.API(), InvoiceAPI: invoices.API()}
+// in cmd/api, after app.New
+server := api.Server{OrderAPI: c.Orders.API(), InvoiceAPI: c.Invoices.API()}
 
 strict := gen.NewStrictHandlerWithOptions(server, nil, gen.StrictGinServerOptions{
     RequestErrorHandlerFunc: func(c *gin.Context, err error) {

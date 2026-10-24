@@ -25,9 +25,10 @@ src/
       components/                    PascalCase files, index.ts barrel = public surface
       hooks/  types/  store/  constants/  utils/   only the folders it needs
     customers/
-  components/ui/                     shadcn primitives (CLI-managed, never hand-edited)
-  components/forms/                  react-hook-form field wrappers
-  components/shared/                 UI used by 2+ features
+  components/ui/                     layer 1: shadcn primitives (CLI-managed, never hand-edited)
+  components/base/                   layer 2: custom atoms shadcn lacks (CheckboxCard, CurrencyInput)
+  components/forms/                  layer 3: one react-hook-form wrapper per atom
+  components/shared/                 layer 4: compositions used by 2+ features (DataTable, EmptyState)
   hooks/  store/  types/             cross-feature hooks, global stores, shared types
   lib/                               api client, auth, i18n, providers, utils
 ```
@@ -52,7 +53,9 @@ rendering, not by reaching into each other's internals.
 | Writing server data | `features/<x>/api/use-<x>-mutations.ts`, **all** of the feature's mutations | data-fetching.md |
 | A type | one feature uses it: `features/<x>/types/`. Two or more, or the API client: `types/` | feature-structure.md |
 | Client or UI state | feature store `features/<x>/store/` or global `store/` (Zustand) | data-fetching.md |
-| UI used by 2+ features | `components/shared/` | feature-structure.md |
+| A control or display shadcn lacks (custom checkbox, currency input) | `components/base/`, plus its wrapper in `components/forms/` | component-layers.md |
+| App-wide variant of a shadcn primitive | `components/base/` wrapper with `cva` | component-layers.md |
+| UI used by 2+ features | `components/shared/` | component-layers.md |
 | Form field wrapper | `components/forms/<Name>Form.tsx` | form-wrappers.md |
 | Building a form | a feature component using react-hook-form + Zod + the wrappers | form-wrappers.md |
 | Shadcn primitive | `components/ui/` via the shadcn CLI or MCP | shadcn-mcp.md |
@@ -72,6 +75,18 @@ rendering, not by reaching into each other's internals.
 5. **Route** last: a route file that imports from `@/features/<x>/components` and renders.
 6. **Verify**: `pnpm type-check` and `pnpm lint` (the lint run includes the import boundary
    rule, see feature-structure.md).
+
+## Component layers (atomic)
+
+UI is built in five layers, and each layer imports only from the layers below it:
+`ui/` (shadcn) → `base/` (custom atoms) → `forms/` (react-hook-form wrappers) → `shared/`
+(compositions) → `features/<x>/components/` (domain UI).
+
+Before creating a component, look in `ui/`, then `base/` and `shared/`, then the shadcn
+registry. When a feature needs UI that none of them has, build it **outside the feature**
+without being asked: the generic atom in `base/`, its form wrapper in `forms/`, and only the
+domain mapping in the feature. The second feature that needs it then imports it instead of
+copying it. Full rules and a worked custom-checkbox example: references/component-layers.md.
 
 ## Quick reference
 
@@ -117,7 +132,8 @@ avoids import cycles.
    never write `"use client"`.
 6. **Types live at the lowest level that covers every consumer.** Extend shared bases with `&`,
    never re-declare their fields.
-7. **Never hand-edit `components/ui/`.** Those files are shadcn-generated.
+7. **Never hand-edit `components/ui/`.** Those files are shadcn-generated. Variants and
+   custom atoms go in `components/base/`, one home per component, never a copy inside a feature.
 8. **Never hardcode user-facing text.** Use `t("key")` and add the key to every locale file.
 9. **Formatting is automated.** Prettier owns formatting, ESLint owns code quality. Run them.
 10. **Verify before done:** `pnpm type-check` and `pnpm lint` pass, or say which one could not run.
@@ -150,6 +166,9 @@ Load the one the task needs:
 - **[references/data-fetching.md](references/data-fetching.md)**: the feature service, key
   factory, queries and mutations files, the no-Query-in-components rule, state routing and
   Zustand.
+- **[references/component-layers.md](references/component-layers.md)**: the five component
+  layers, the lookup order before creating a component, custom atoms and their form wrappers,
+  `cva` variants instead of copies, promotion rules.
 - **[references/form-wrappers.md](references/form-wrappers.md)**: the generic field wrapper
   contract for both shadcn form styles (`Field` + `Controller`, and the older `Form`).
 - **[references/routing-layer.md](references/routing-layer.md)**: the only Next.js vs Vite

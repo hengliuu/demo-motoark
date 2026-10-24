@@ -5,8 +5,10 @@
 - What a module is
 - Naming
 - `module.go`: the module's front door
+- `internal/app/container.go`: one file wires everything
 - `cmd/api/main.go`
 - `cmd/worker/main.go`
+- Coming from `container/` + `controller/` + `routes/`
 - Cross-module calls
 - Cross-module transactions
 - When to split a module, when to merge
@@ -100,8 +102,105 @@ func (m *Module) RegisterConsumers(c queue.Consumer) {
 }
 ```
 
-Every module exposes the same three verbs, so `cmd/` reads like a table of contents and a new
-module is wired by adding two lines.
+Every module exposes the same three verbs, so the container reads like a table of contents.
+
+## `internal/app/container.go`: one file wires everything
+
+The container is the one place that builds infrastructure and modules, in dependency order,
+and registers them. Both binaries use it, so wiring is written once.
+
+```go
+package app
+
+// Container holds the infrastructure and every module of the service. Adding a module is
+// one field, one line in New, and one entry in modules().
+type Container struct {
+    Config config.Config
+    Log    *slog.Logger
+    DB     *gorm.DB
+    Tx     *database.Transactor
+
+    Orders   *order.Module
+    Invoices *invoice.Module
+
+    closers []func() error
+}
+
+// New builds the container. Any failure stops startup: a service that starts with half
+// its dependencies missing fails later, on a customer request.
+func New(cfg config.Config) (_ *Container, err error) {
+    c := &Container{Config: cfg, Log: logging.New(cfg.LogLevel)}
+    defer func() {
+        if err != nil {
+            err = errors.Join(err, c.Close()) // release whatever opened before the failure
+        }
+    }()
+
+    if c.DB, err = database.Open(cfg.Database); err != nil {
+        return nil, fmt.Errorf("open database: %w", err)
+    }
+    c.onClose(func() error { return database.Close(c.DB) })
+    c.Tx = database.NewTransactor(c.DB)
+
+    // Modules in dependency order. A module that needs another receives its Service.
+    c.Orders = order.New(order.Deps{DB: c.DB, Tx: c.Tx, Log: c.Log})
+    c.Invoices = invoice.New(invoice.Deps{DB: c.DB, Tx: c.Tx, Log: c.Log, Orders: c.Orders.Service})
+
+    return c, nil
+}
+
+// modules lists every module once, so a module cannot be built and then forgotten by a
+// registration loop.
+func (c *Container) modules() []any {
+    return []any{c.Orders, c.Invoices}
+}
+
+type routeRegistrar interface{ RegisterRoutes(rg *gin.RouterGroup) }
+type consumerRegistrar interface{ RegisterConsumers(q queue.Consumer) }
+
+func (c *Container) RegisterRoutes(rg *gin.RouterGroup) {
+    for _, m := range c.modules() {
+        if r, ok := m.(routeRegistrar); ok {
+            r.RegisterRoutes(rg)
+        }
+    }
+}
+
+func (c *Container) RegisterConsumers(q queue.Consumer) {
+    for _, m := range c.modules() {
+        if r, ok := m.(consumerRegistrar); ok {
+            r.RegisterConsumers(q)
+        }
+    }
+}
+
+func (c *Container) onClose(fn func() error) { c.closers = append(c.closers, fn) }
+
+// Close releases resources in reverse order of creation.
+func (c *Container) Close() error {
+    var errs []error
+    for i := len(c.closers) - 1; i >= 0; i-- {
+        errs = append(errs, c.closers[i]())
+    }
+    c.closers = nil
+    return errors.Join(errs...)
+}
+```
+
+Why it stays one readable file as the service grows:
+
+- Each module wires its own handler, service and repository inside `module.go`, so the
+  container holds **one line per module**, not one per controller plus one per service.
+  Thirty modules is about thirty lines in `New`.
+- `modules()` is the only list the registration loops read.
+- Dependencies are explicit `Deps` fields, visible in this file. A missing one is a compile
+  error, never a hidden global.
+- Infrastructure that is optional for a deployment (an image generator, an external API) is
+  switched by config (`if cfg.Generation.Enabled { ... }`), never by "it failed to connect, so
+  leave it nil and keep going".
+
+No DI framework is needed. Reflection-based containers (fx, dig) and generated ones (wire) hide
+the same thirty lines behind tooling. If the project already uses one, follow it.
 
 ## `cmd/api/main.go`
 
@@ -126,57 +225,52 @@ func run(ctx context.Context) error {
     if err != nil {
         return fmt.Errorf("load config: %w", err)
     }
-    log := logging.New(cfg.LogLevel)
-
-    db, err := database.Open(cfg.Database)
+    c, err := app.New(cfg)
     if err != nil {
-        return fmt.Errorf("open database: %w", err)
+        return err
     }
-    defer database.Close(db)
-    tx := database.NewTransactor(db)
+    defer c.Close()
 
-    // Modules, in dependency order. A module that needs another receives its Service.
-    orders := order.New(order.Deps{DB: db, Tx: tx, Log: log})
-    invoices := invoice.New(invoice.Deps{DB: db, Tx: tx, Log: log, Orders: orders.Service})
+    router := httpx.NewRouter(c.Log, cfg.HTTP)
+    c.RegisterRoutes(router.Group("/api/v1", httpx.RequireAuth(cfg.Auth)))
 
-    router := httpx.NewRouter(log, cfg.HTTP)
-    api := router.Group("/api/v1", httpx.RequireAuth(cfg.Auth))
-    orders.RegisterRoutes(api)
-    invoices.RegisterRoutes(api)
-
-    return httpx.Run(ctx, cfg.HTTP.Addr, router, log)
+    return httpx.Run(ctx, cfg.HTTP.Addr, router, c.Log)
 }
 ```
 
 Shutdown order falls out of the structure: `httpx.Run` returns after the server drained
-in-flight requests, then the deferred `database.Close` runs. Nothing closes the database while a
-request still uses it.
+in-flight requests, then the deferred `c.Close` closes the database. Nothing closes the
+database while a request still uses it.
 
 ## `cmd/worker/main.go`
 
-The worker builds **the same modules** and registers consumers instead of routes. Business
+The worker builds **the same container** and registers consumers instead of routes. Business
 logic is never duplicated into a worker package, the consumer calls the module's service.
 
 ```go
 func run(ctx context.Context) error {
-    // ...config, log, db, tx exactly as in cmd/api
+    cfg, err := config.Load()
+    if err != nil {
+        return fmt.Errorf("load config: %w", err)
+    }
+    c, err := app.New(cfg)
+    if err != nil {
+        return err
+    }
+    defer c.Close()
 
-    orders := order.New(order.Deps{DB: db, Tx: tx, Log: log})
-    invoices := invoice.New(invoice.Deps{DB: db, Tx: tx, Log: log, Orders: orders.Service})
-
-    consumer, err := queue.NewConsumer(cfg.Queue, log)
+    consumer, err := queue.NewConsumer(cfg.Queue, c.Log)
     if err != nil {
         return fmt.Errorf("create consumer: %w", err)
     }
-    orders.RegisterConsumers(consumer)
-    invoices.RegisterConsumers(consumer)
+    c.RegisterConsumers(consumer)
 
     publisher, err := queue.NewPublisher(cfg.Queue)
     if err != nil {
         return fmt.Errorf("create publisher: %w", err)
     }
     defer publisher.Close()
-    relay := outbox.NewRelay(db, publisher, log)
+    relay := outbox.NewRelay(c.DB, publisher, c.Log)
 
     g, ctx := errgroup.WithContext(ctx)
     g.Go(func() error { return consumer.Run(ctx) })
@@ -188,8 +282,26 @@ func run(ctx context.Context) error {
 `errgroup` (`golang.org/x/sync/errgroup`) cancels the shared context when either loop fails or
 a signal arrives, and `Wait` returns after both loops have stopped. Details in worker.md.
 
-One binary with a flag (`app api`, `app worker`) is fine too when deployment prefers one image.
-Keep the two `run` functions separate either way, so the API never starts consumers by accident.
+One binary with a subcommand (`app api`, `app worker`) is fine too when deployment prefers one
+image. Keep the two `run` functions separate either way, so the API never starts consumers by
+accident.
+
+## Coming from `container/` + `controller/` + `routes/`
+
+A layer-first service with a `ServiceContainer`, a `ControllerContainer` and one
+`routes/<entity>_routes.go` per entity maps one to one:
+
+| Layer-first | Module-first |
+|---|---|
+| `service_container.go`: a field and a constructor call per service | gone, `module.go` builds the service inside the module |
+| `controller_container.go`: a field and a constructor call per controller | gone, `module.go` builds the handler |
+| `routes/<entity>_routes.go` plus a line in `routes.go` | `RegisterRoutes` in the module's `module.go` |
+| `server.go` building both containers and the router | `app.New` and `c.RegisterRoutes` in `cmd/api` |
+| adding an entity touches about six files in five folders | adding a module touches its own folder plus three lines in `container.go` |
+
+Per-route middleware (rate limits, permission checks) moves into `RegisterRoutes`. Pass the
+middleware factory through `Deps` (`RateLimit func(key string) gin.HandlerFunc`) so the module
+does not reach for a global.
 
 ## Cross-module calls
 
