@@ -72,7 +72,7 @@ describe("GET /api/healthz", () => {
     expect(response.status).toBe(503);
   });
 
-  it("MOTO-01-TC12 healthz uses the API service binding when Cloudflare provides one", async () => {
+  it("MOTO-01-TC23 healthz uses the API service binding when Cloudflare provides one", async () => {
     const binding = { fetch: vi.fn<typeof fetch>().mockResolvedValue(new Response("{}", { status: 200 })) };
     getCloudflareContext.mockReturnValue({ env: { API: binding } });
 

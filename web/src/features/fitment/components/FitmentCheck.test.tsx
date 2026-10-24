@@ -67,13 +67,16 @@ afterEach(() => {
 });
 
 describe("FitmentCheck", () => {
-  it("shows the empty state with the VIN hint", () => {
+  it("MOTO-01-TC24 shows the empty state with the form and the VIN hint", () => {
     render(
       <QueryProvider>
         <FitmentCheck />
       </QueryProvider>,
     );
     expect(screen.getByRole("heading", { name: "Will this part fit your car?" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Part number")).toBeInTheDocument();
+    expect(screen.getByLabelText("VIN")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Check fitment" })).toBeEnabled();
     expect(screen.getByText("Where to find your VIN")).toBeInTheDocument();
   });
 
@@ -140,7 +143,7 @@ describe("FitmentCheck", () => {
     expect(await screen.findByRole("heading", { name: "1 seller has the new part" })).toBeInTheDocument();
   });
 
-  it("MOTO-01-TC01 listings header says sorted by lowest price", async () => {
+  it("MOTO-01-TC22 listings say sorted by lowest price as plain text, with no sort control", async () => {
     stubFetch(jsonResponse(FITS_BODY));
     await fillAndSubmit("A0004204102", "WDD2050421R123456");
     expect(await screen.findByText("Sorted by lowest price")).toBeInTheDocument();
@@ -199,7 +202,7 @@ describe("FitmentCheck", () => {
     expect(String(fetchMock.mock.calls[1]?.[0])).toBe(String(fetchMock.mock.calls[0]?.[0]));
   });
 
-  it("disables the button and shows the skeleton while the check runs", async () => {
+  it("MOTO-01-TC16 disables the button, marks it busy and shows the skeleton while the check runs", async () => {
     let resolveFetch: (response: Response) => void = () => {};
     vi.stubGlobal(
       "fetch",
@@ -209,13 +212,14 @@ describe("FitmentCheck", () => {
 
     const button = await screen.findByRole("button", { name: "Check fitment" });
     await waitFor(() => expect(button).toBeDisabled());
+    expect(button).toHaveAttribute("aria-busy", "true");
     expect(screen.getByRole("status")).toHaveTextContent("Checking fitment");
 
     resolveFetch(jsonResponse(FITS_BODY));
     expect(await screen.findByText("Fits your vehicle")).toBeInTheDocument();
   });
 
-  it("New search returns to an empty form", async () => {
+  it("MOTO-01-TC22 New search returns to an empty form", async () => {
     stubFetch(jsonResponse(FITS_BODY));
     const user = await fillAndSubmit("A0004204102", "WDD2050421R123456");
     await screen.findByText("Fits your vehicle");

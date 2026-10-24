@@ -50,7 +50,7 @@ describe("GET /api/fitment", () => {
     getCloudflareContext.mockReset();
   });
 
-  it("MOTO-01-TC10 Go API unreachable gives 503 unavailable", async () => {
+  it("MOTO-01-TC20 Go API unreachable gives 503 unavailable", async () => {
     fetchStub.mockRejectedValue(new TypeError("fetch failed"));
 
     const response = await GET(request());
@@ -59,7 +59,7 @@ describe("GET /api/fitment", () => {
     expect(await response.json()).toEqual(UNAVAILABLE_BODY);
   });
 
-  it("MOTO-01-TC10 Go 502 gives 503 unavailable", async () => {
+  it("MOTO-01-TC20 Go 502 gives 503 unavailable", async () => {
     fetchStub.mockResolvedValue(new Response("<html>Bad gateway</html>", { status: 502 }));
 
     const response = await GET(request());
@@ -68,7 +68,7 @@ describe("GET /api/fitment", () => {
     expect(await response.json()).toEqual(UNAVAILABLE_BODY);
   });
 
-  it("MOTO-01-TC10 Go API silent for 5 seconds gives 503 unavailable", async () => {
+  it("MOTO-01-TC20 Go API silent for 5 seconds gives 503 unavailable", async () => {
     vi.useFakeTimers();
     fetchStub.mockImplementation(
       (_input, init) =>
@@ -107,7 +107,7 @@ describe("GET /api/fitment", () => {
     expect(new Headers(init?.headers).get("x-request-id")).toBe("req-123");
   });
 
-  it("MOTO-01-TC10 uses the API service binding when Cloudflare provides one", async () => {
+  it("MOTO-01-TC23 uses the API service binding when Cloudflare provides one", async () => {
     const binding = { fetch: vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({ result: "fits" }, 200)) };
     getCloudflareContext.mockReturnValue({ env: { API: binding } });
 

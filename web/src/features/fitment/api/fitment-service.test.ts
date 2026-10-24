@@ -82,7 +82,7 @@ describe("fitmentService.check", () => {
     expect(error.message).toBe("We couldn't find this VIN. Check it against your registration card");
   });
 
-  it("MOTO-01-TC05 a 400 invalid_vin keeps its code", async () => {
+  it("MOTO-01-TC19 a 400 invalid_vin keeps its code", async () => {
     stubFetch(
       jsonResponse(
         { error: { code: "invalid_vin", message: "Enter the 17-character VIN from your registration card" } },

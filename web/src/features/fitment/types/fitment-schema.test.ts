@@ -21,12 +21,12 @@ describe("fitmentFormSchema VIN rule", () => {
     expect(vinMessages(vin)).toEqual([VIN_MESSAGE]);
   });
 
-  it("MOTO-01-TC06 a valid VIN passes", () => {
+  it("a valid VIN passes", () => {
     const result = fitmentFormSchema.safeParse({ part: PART, vin: "WDD2050421R123456" });
     expect(result.success).toBe(true);
   });
 
-  it("MOTO-01-TC06 a lowercase VIN with spaces around it passes, trimmed and uppercased", () => {
+  it("MOTO-01-TC17 a lowercase VIN with spaces around it passes, trimmed and uppercased", () => {
     const result = fitmentFormSchema.safeParse({ part: PART, vin: "  wdd2050421r123456 " });
     expect(result.success && result.data.vin).toBe("WDD2050421R123456");
   });
@@ -42,7 +42,7 @@ describe("fitmentFormSchema VIN rule", () => {
 
 describe("fitmentFormSchema part number rule", () => {
   it.each(["", "   ", "...", "A 205 906 22 03 #"])(
-    "MOTO-01-TC04 the part number %j is rejected",
+    "MOTO-01-TC15 the part number %j is rejected",
     (part) => {
       const result = fitmentFormSchema.safeParse({ part, vin: "WDD2050421R123456" });
       expect(result.success).toBe(false);
