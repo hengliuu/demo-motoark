@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { QueryProvider } from "@/lib/query-provider";
@@ -116,7 +116,37 @@ describe("FitmentCheck", () => {
         "A 205 906 22 03 was replaced by A 205 906 59 03, which fits this Mercedes-Benz C 200. The listings below are for the new number.",
       ),
     ).toBeInTheDocument();
-    expect(screen.getByText("1 seller has this part")).toBeInTheDocument();
+  });
+
+  it("MOTO-01-TC02 the superseded summary shows old to new number and what the buyer typed", async () => {
+    stubFetch(jsonResponse(SUPERSEDED_BODY));
+    await fillAndSubmit("A-205.906.22.03", "WDD2050421R123456");
+    const summary = await screen.findByRole("region", { name: "Vehicle and part checked" });
+    expect(within(summary).getByText("You searched A-205.906.22.03")).toBeInTheDocument();
+    expect(within(summary).getByText("A 205 906 22 03 \u2192 A 205 906 59 03")).toBeInTheDocument();
+    expect(within(summary).getByText("Headlamp, left")).toBeInTheDocument();
+    expect(within(summary).queryByText("OEM part number")).not.toBeInTheDocument();
+  });
+
+  it("MOTO-01-TC02 the superseded listings header says the sellers have the new part", async () => {
+    stubFetch(jsonResponse({ ...SUPERSEDED_BODY, listings: [...SUPERSEDED_BODY.listings, { ...SUPERSEDED_BODY.listings[0], id: "L-2002" }] }));
+    await fillAndSubmit("A2059062203", "WDD2050421R123456");
+    expect(await screen.findByRole("heading", { name: "2 sellers have the new part" })).toBeInTheDocument();
+  });
+
+  it("MOTO-01-TC02 one superseded seller reads 1 seller has the new part", async () => {
+    stubFetch(jsonResponse(SUPERSEDED_BODY));
+    await fillAndSubmit("A2059062203", "WDD2050421R123456");
+    expect(await screen.findByRole("heading", { name: "1 seller has the new part" })).toBeInTheDocument();
+  });
+
+  it("MOTO-01-TC01 listings header says sorted by lowest price", async () => {
+    stubFetch(jsonResponse(FITS_BODY));
+    await fillAndSubmit("A0004204102", "WDD2050421R123456");
+    expect(await screen.findByText("Sorted by lowest price")).toBeInTheDocument();
+    expect(screen.queryByText("Sort: Lowest price")).not.toBeInTheDocument();
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /sort/i })).not.toBeInTheDocument();
   });
 
   it("MOTO-01-TC03 a part that does not fit shows the red banner and a link to search by vehicle", async () => {

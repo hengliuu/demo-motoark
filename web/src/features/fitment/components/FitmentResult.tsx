@@ -6,20 +6,22 @@ import { ResultSummary } from "./ResultSummary";
 
 interface FitmentResultProps {
   response: FitmentResponse;
+  searched: string;
   onNewSearch: () => void;
 }
 
-function sellerCount(count: number): string {
-  return count === 1 ? "1 seller has this part" : `${count} sellers have this part`;
+function sellerCount(count: number, result: FitmentResponse["result"]): string {
+  const what = result === "superseded" ? "the new part" : "this part";
+  return count === 1 ? `1 seller has ${what}` : `${count} sellers have ${what}`;
 }
 
-export function FitmentResult({ response, onNewSearch }: FitmentResultProps) {
+export function FitmentResult({ response, searched, onNewSearch }: FitmentResultProps) {
   const { listings } = response;
 
   return (
     <div className="flex flex-col gap-6">
       <ResultBanner response={response} />
-      <ResultSummary response={response} onNewSearch={onNewSearch} />
+      <ResultSummary response={response} searched={searched} onNewSearch={onNewSearch} />
       {response.result === "no_fit" ? (
         <NoFitNextStep vehicle={response.vehicle} onCheckAnother={onNewSearch} />
       ) : (
@@ -30,11 +32,9 @@ export function FitmentResult({ response, onNewSearch }: FitmentResultProps) {
                 id="listings-heading"
                 className="font-display text-2xl leading-[30px] font-extrabold tracking-[-0.48px] text-ink"
               >
-                {sellerCount(listings.length)}
+                {sellerCount(listings.length, response.result)}
               </h2>
-              <p className="rounded-input border border-(--fitment-line-2) bg-white px-3.5 py-2.5 text-sm leading-5 font-semibold text-ink">
-                Sort: Lowest price
-              </p>
+              <p className="text-sm leading-5 text-(color:--fitment-fg-2)">Sorted by lowest price</p>
             </div>
             <div className="grid gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
               {listings.map((listing) => (

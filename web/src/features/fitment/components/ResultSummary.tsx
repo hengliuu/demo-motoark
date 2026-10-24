@@ -8,12 +8,17 @@ const HEADING = "font-display text-2xl leading-[30px] font-extrabold tracking-[-
 
 interface ResultSummaryProps {
   response: FitmentResponse;
+  searched: string;
   onNewSearch: () => void;
 }
 
-export function ResultSummary({ response, onNewSearch }: ResultSummaryProps) {
+export function ResultSummary({ response, searched, onNewSearch }: ResultSummaryProps) {
   const { vehicle, part, resolved } = response;
-  const partName = part.name || resolved.name;
+  const isSuperseded = response.result === "superseded";
+  const partName = isSuperseded ? resolved.name : part.name || resolved.name;
+  const partNumberLine = isSuperseded
+    ? `${formatPartNumber(part.number)} \u2192 ${formatPartNumber(resolved.number)}`
+    : formatPartNumber(part.number);
 
   return (
     <section
@@ -36,9 +41,11 @@ export function ResultSummary({ response, onNewSearch }: ResultSummaryProps) {
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <p className={EYEBROW}>PART</p>
         {partName && <p className={HEADING}>{partName}</p>}
-        <p className="text-[13px] leading-5 text-(color:--fitment-dk-muted)">OEM part number</p>
+        <p className="text-[13px] leading-5 text-(color:--fitment-dk-muted)">
+          {isSuperseded ? `You searched ${searched}` : "OEM part number"}
+        </p>
         <p className="font-mono text-[13px] leading-5 font-medium text-white md:text-[15px]">
-          {formatPartNumber(part.number)}
+          {partNumberLine}
         </p>
       </div>
       <Button
