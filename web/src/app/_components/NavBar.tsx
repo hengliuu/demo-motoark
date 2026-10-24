@@ -1,8 +1,6 @@
-import { Menu, Search, ShoppingCart, User } from "lucide-react";
 import Link from "next/link";
 
 const DEMO_TAG = "DEMO";
-const PASSIVE_NAV_ITEMS = ["Brands", "How it works"] as const;
 
 export function NavBar() {
   return (
@@ -26,20 +24,8 @@ function DesktopNav() {
             {DEMO_TAG}
           </span>
         </Link>
-        <div
-          aria-hidden="true"
-          className="hidden w-[400px] items-center gap-2.5 rounded-[10px] bg-white px-3.5 py-[11px] text-sm text-[#98a2b3] lg:flex"
-        >
-          <Search className="size-[18px]" />
-          Part number, part name or car
-        </div>
       </div>
       <div className="flex items-center gap-7 text-sm">
-        {PASSIVE_NAV_ITEMS.map((label) => (
-          <span key={label} className="pt-2 pb-[8px] font-semibold text-[#d0d5dd]">
-            {label}
-          </span>
-        ))}
         <Link
           href="/fitment"
           aria-current="page"
@@ -47,12 +33,6 @@ function DesktopNav() {
         >
           Fitment Check
         </Link>
-        <ShoppingCart aria-hidden="true" className="size-5 text-white" />
-        <span className="flex items-center gap-1.5 font-semibold text-white">
-          <User aria-hidden="true" className="size-4" />
-          Log in
-        </span>
-        <span className="rounded-[10px] bg-white px-4 py-2.5 font-bold text-ink">Create Account</span>
       </div>
     </nav>
   );
@@ -70,9 +50,9 @@ function MobileNav() {
         </span>
       </Link>
       <div className="flex-1" />
-      <Search aria-hidden="true" className="size-[22px] text-white" />
-      <ShoppingCart aria-hidden="true" className="size-[22px] text-white" />
-      <Menu aria-hidden="true" className="size-[22px] text-white" />
+      <Link href="/fitment" aria-current="page" className="text-sm font-bold text-white underline underline-offset-4">
+        Fitment Check
+      </Link>
     </nav>
   );
 }
