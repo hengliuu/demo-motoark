@@ -38,7 +38,7 @@ describe("GET /api/healthz", () => {
     expect(String(fetchStub.mock.calls[0]?.[0])).toBe("http://api.test/healthz");
   });
 
-  it("MOTO-01-TC12 healthz is unavailable when the Go API is down", async () => {
+  it("MOTO-01-TC20 healthz is unavailable when the Go API is down", async () => {
     fetchStub.mockRejectedValue(new TypeError("fetch failed"));
 
     const response = await GET();
@@ -47,7 +47,7 @@ describe("GET /api/healthz", () => {
     expect(await response.json()).toEqual({ status: "unavailable" });
   });
 
-  it("MOTO-01-TC12 healthz is unavailable when the Go API answers non-200", async () => {
+  it("MOTO-01-TC20 healthz is unavailable when the Go API answers non-200", async () => {
     fetchStub.mockResolvedValue(new Response("nope", { status: 500 }));
 
     const response = await GET();
@@ -56,7 +56,7 @@ describe("GET /api/healthz", () => {
     expect(await response.json()).toEqual({ status: "unavailable" });
   });
 
-  it("MOTO-01-TC12 healthz is unavailable when the Go API is silent for 5 seconds", async () => {
+  it("MOTO-01-TC20 healthz is unavailable when the Go API is silent for 5 seconds", async () => {
     vi.useFakeTimers();
     fetchStub.mockImplementation(
       (_input, init) =>

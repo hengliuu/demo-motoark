@@ -21,11 +21,11 @@ describe("part number formatting", () => {
     },
   );
 
-  it("spaces an OEM number the way the design shows it", () => {
+  it("MOTO-01-TC25 spaces an OEM number the way the design shows it", () => {
     expect(formatPartNumber("A0004204102")).toBe("A 000 420 41 02");
   });
 
-  it("leaves a number that does not follow the OEM pattern unchanged", () => {
+  it("MOTO-01-TC25 leaves a number that does not follow the OEM pattern unchanged", () => {
     expect(formatPartNumber("XY12")).toBe("XY12");
   });
 });

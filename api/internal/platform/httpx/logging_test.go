@@ -97,7 +97,7 @@ func TestRequestLogging(t *testing.T) {
 		}
 	})
 
-	t.Run("an incoming X-Request-ID is reused and echoed", func(t *testing.T) {
+	t.Run("MOTO-01-TC13 an incoming X-Request-ID is reused and echoed", func(t *testing.T) {
 		var buf bytes.Buffer
 		req := httptest.NewRequest(http.MethodGet, "/v1/fitment", nil)
 		req.Header.Set("X-Request-ID", "req-abc-123")

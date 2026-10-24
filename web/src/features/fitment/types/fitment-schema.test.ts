@@ -21,7 +21,7 @@ describe("fitmentFormSchema VIN rule", () => {
     expect(vinMessages(vin)).toEqual([VIN_MESSAGE]);
   });
 
-  it("a valid VIN passes", () => {
+  it("MOTO-01-TC17 a VIN already in canonical form passes unchanged", () => {
     const result = fitmentFormSchema.safeParse({ part: PART, vin: "WDD2050421R123456" });
     expect(result.success).toBe(true);
   });

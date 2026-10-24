@@ -186,7 +186,7 @@ func TestFitmentHandler(t *testing.T) {
 			"We couldn't find this VIN. Check it against your registration card")
 	})
 
-	t.Run("healthz returns ok", func(t *testing.T) {
+	t.Run("MOTO-01-TC12 healthz returns ok", func(t *testing.T) {
 		rec := httptest.NewRecorder()
 		newRouter(t).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/healthz", nil))
 		if rec.Code != http.StatusOK || rec.Body.String() != `{"status":"ok"}` {
