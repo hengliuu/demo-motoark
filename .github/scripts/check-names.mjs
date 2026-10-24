@@ -36,6 +36,14 @@ function namesIn(scope, label) {
   for (const [index, container] of (scope.containers ?? []).entries()) {
     found.push({ where: `${label} containers[${index}].name`, value: container.name });
   }
+  for (const [index, binding] of (scope.services ?? []).entries()) {
+    found.push({ where: `${label} services[${index}].service`, value: binding.service });
+  }
+  for (const [index, binding] of (scope.durable_objects?.bindings ?? []).entries()) {
+    if (binding.script_name !== undefined) {
+      found.push({ where: `${label} durable_objects.bindings[${index}].script_name`, value: binding.script_name });
+    }
+  }
   return found;
 }
 
