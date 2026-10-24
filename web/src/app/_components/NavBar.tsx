@@ -21,7 +21,7 @@ function DesktopNav(): ReactElement {
       <div className="flex min-w-0 items-center gap-5">
         <Link href="/" className="flex items-center gap-2">
           <span className="font-display text-[22px] font-extrabold tracking-[-0.22px] text-white">MotoArk</span>
-          <span className="rounded-md border border-[#344054] px-2 py-[3px] text-[10px] font-bold tracking-[0.8px] text-[#98a2b3]">
+          <span className="rounded-md border border-ink-3 px-2 py-[3px] text-[10px] font-bold tracking-[0.8px] text-fg-4">
             {DEMO_TAG}
           </span>
         </Link>
@@ -46,7 +46,7 @@ function MobileNav(): ReactElement {
         <span className="font-display text-xl leading-[30px] font-extrabold tracking-[-0.4px] text-white">
           MotoArk
         </span>
-        <span className="rounded-sm border border-[#98a2b3] px-1.5 py-0.5 text-[10px] leading-4 font-bold tracking-[1px] text-[#d0d5dd]">
+        <span className="rounded-sm border border-fg-4 px-1.5 py-0.5 text-[10px] leading-4 font-bold tracking-[1px] text-dk-muted">
           {DEMO_TAG}
         </span>
       </Link>

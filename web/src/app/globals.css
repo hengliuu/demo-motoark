@@ -12,6 +12,10 @@
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-ink: #111827;
+  --color-ink-3: #344054;
+  --color-fg-2: #475467;
+  --color-fg-4: #98a2b3;
+  --color-dk-muted: #d0d5dd;
   --color-brand: #E60115;
   --radius-card: 14px;
   --radius-input: 10px;
