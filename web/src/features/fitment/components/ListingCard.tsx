@@ -1,6 +1,5 @@
-import { ImageIcon, ShieldCheck, ShoppingCart, Truck } from "lucide-react";
+import { ImageIcon, ShieldCheck, Truck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -50,10 +49,6 @@ export function ListingCard({ listing }: { listing: FitmentListing }) {
             Delivery: {listing.delivery}
           </li>
         </ul>
-        <Button type="button" className="h-11 w-full gap-2 rounded-input bg-ink px-[18px] text-[15px] font-bold text-white hover:bg-ink/90">
-          <ShoppingCart aria-hidden className="size-[18px]" />
-          Add to cart
-        </Button>
       </div>
     </Card>
   );
