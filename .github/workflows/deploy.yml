@@ -51,6 +51,18 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: Install Playwright browser
         run: pnpm -C e2e exec playwright install --with-deps chromium
+      - name: Wait for staging to answer
+        run: |
+          deadline=$((SECONDS + 90))
+          until [ "$(curl -s --max-time 5 "$STAGING_URL/api/healthz")" = '{"status":"ok"}' ]; do
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo "::error::Staging did not answer $STAGING_URL/api/healthz with 200 and {\"status\":\"ok\"} within 90 seconds"
+              exit 1
+            fi
+            sleep 5
+          done
+        env:
+          STAGING_URL: ${{ vars.STAGING_URL }}
       - name: Smoke test staging
         run: pnpm -C e2e exec playwright test --grep @smoke
         env:
