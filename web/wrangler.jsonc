@@ -19,6 +19,13 @@
         { "binding": "API", "service": "motoark-demo-api-staging" }
       ]
     },
+    // Local OpenNext preview only (scripts/e2e-workers.sh), never deployed. No API binding on
+    // purpose: the routes fall back to API_BASE_URL and reach a `go run` API.
+    "ci": {
+      "name": "motoark-demo-web-ci",
+      "vars": { "API_BASE_URL": "http://localhost:8080" },
+      "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "motoark-demo-web-ci" }]
+    },
     "production": {
       "name": "motoark-demo-web-production",
       "observability": { "enabled": true, "redact_query_string": true, "logs": { "invocation_logs": false } },

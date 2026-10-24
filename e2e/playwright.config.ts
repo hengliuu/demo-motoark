@@ -4,6 +4,10 @@ const baseURL = process.env.BASE_URL ?? "http://localhost:3000";
 
 export default defineConfig({
   testDir: ".",
+  // CI uploads the HTML report as an artifact. The list reporter keeps the results in the log.
+  reporter: process.env.CI
+    ? [["list"], ["html", { open: "never", outputFolder: "playwright-report" }]]
+    : "list",
   use: {
     baseURL,
   },

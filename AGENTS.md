@@ -58,7 +58,10 @@ and `go-backend-patterns` for `api/`. Two deliberate differences in this repo:
 
 - `make dev` runs the Go API on 8080 and Next.js on 3000, wired with `API_BASE_URL`.
 - `make test` runs Go and Vitest. `make e2e` builds the web app and runs Playwright on the
-  `desktop` and `mobile` (390 by 844) projects.
+  `desktop` and `mobile` (390 by 844) projects against `next start` on Node.
+- `make e2e-workers` builds with OpenNext and runs the `@smoke` tests against the Workers
+  runtime (ports 8080 and 8787). Node passing does not prove the Worker renders, so run it
+  after any change to `next.config.ts`, `open-next.config.ts` or `web/wrangler.jsonc`.
 - Never commit secrets, never read `.env` files, never print a token. Cloudflare credentials
   live only in GitHub environment secrets.
 

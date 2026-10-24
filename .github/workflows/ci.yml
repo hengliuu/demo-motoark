@@ -3,6 +3,7 @@ name: CI
 on:
   pull_request:
   push:
+    branches: [main]
 
 permissions:
   contents: read
@@ -55,9 +56,14 @@ jobs:
 
       - run: pnpm -C e2e exec playwright test
 
+      - name: Smoke tests on the Workers runtime (OpenNext preview)
+        run: make e2e-workers
+
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: playwright-report
-          path: e2e/playwright-report
+          path: |
+            e2e/playwright-report
+            e2e/playwright-report-workers
           retention-days: 14
