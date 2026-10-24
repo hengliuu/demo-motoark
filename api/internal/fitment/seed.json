@@ -1,0 +1,18 @@
+{
+  "vehicles": [
+    { "vin": "WDD2050421R123456", "make": "Mercedes-Benz", "model": "C 200", "chassis": "W205", "year": 2019 }
+  ],
+  "parts": [
+    { "number": "A0004204102", "name": "Front brake pad set", "chassis": "W205" },
+    { "number": "A2059062203", "name": "Headlamp, left", "chassis": "W205", "superseded_by": "A2059065903" },
+    { "number": "A2059065903", "name": "Headlamp, left", "chassis": "W205" },
+    { "number": "A1669060103", "name": "Headlamp, left (W166)", "chassis": "W166" }
+  ],
+  "listings": [
+    { "id": "L-1001", "part_number": "A0004204102", "yard": "Al Quoz Auto Recyclers", "grade": "A", "price_aed": 899, "warranty_days": 30, "delivery": "Next day" },
+    { "id": "L-1002", "part_number": "A0004204102", "yard": "Sharjah Parts Yard", "grade": "B", "price_aed": 1250, "warranty_days": 14, "delivery": "2 to 3 days" },
+    { "id": "L-1003", "part_number": "A0004204102", "yard": "Ras Al Khor Dismantling", "grade": "A", "price_aed": 1480, "warranty_days": 60, "delivery": "Next day" },
+    { "id": "L-2001", "part_number": "A2059065903", "yard": "Sharjah Parts Yard", "grade": "A", "price_aed": 1250, "warranty_days": 30, "delivery": "Next day" },
+    { "id": "L-2002", "part_number": "A2059065903", "yard": "Al Quoz Auto Recyclers", "grade": "B", "price_aed": 2150, "warranty_days": 30, "delivery": "2 to 3 days" }
+  ]
+}

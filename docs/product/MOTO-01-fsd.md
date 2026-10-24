@@ -17,7 +17,7 @@ Functional specification. Read the [PRD](MOTO-01-prd.md) first for the why.
 | Part | Technology | Deployed to |
 |---|---|---|
 | `web/` | Next.js (App Router), TypeScript, Tailwind CSS, shadcn/ui | Cloudflare Workers, through OpenNext |
-| `api/` | Go, standard library HTTP server, seed data embedded in the binary | Cloudflare Containers |
+| `api/` | Go with Gin, seed data embedded in the binary | Cloudflare Containers |
 
 The page calls the API from the server. The browser never calls the API directly.
 
@@ -37,7 +37,7 @@ same error codes.
 | Checking | The button shows a spinner and is disabled |
 | Fits | Green banner, vehicle, part, listings |
 | Superseded | Amber banner, old number to new number, listings for the new number |
-| Does not fit | Red banner, the vehicle, a link to search parts for that vehicle |
+| Does not fit | Red banner, the vehicle, and Check another part, which keeps the VIN and clears the part number |
 | Unknown VIN | Inline message: We couldn't find this VIN. Check it against your registration card |
 | API unavailable | Fitment check is unavailable right now, and a Try again button |
 
@@ -64,6 +64,7 @@ Listings are sorted by price, lowest first. Price reads `AED 1,250`. Under it:
 - Supersession is followed to the newest number, at most 5 hops. A cycle in the data stops
   at the cap, so a request can never hang.
 - A result of `superseded` means the newest number fits the vehicle.
+- A well-formed part number that is not in the catalogue answers 200 `no_fit`, never an error.
 - The API logs one line per request with a request ID, and never logs the full VIN (the last
   6 characters are masked).
 
@@ -85,7 +86,7 @@ Yards: Al Quoz Auto Recyclers, Sharjah Parts Yard, Ras Al Khor Dismantling.
 |---|---|---|
 | MOTO-01-AC01 | A fitting part shows the green Fits result, the vehicle and its listings | US1 |
 | MOTO-01-AC02 | A superseded part shows the amber result, old to new number, and listings for the new number | US2 |
-| MOTO-01-AC03 | A part that does not fit shows the red result and a link to search by vehicle | US3 |
+| MOTO-01-AC03 | A part that does not fit shows the red result and a way to check another part for the same vehicle | US3 |
 | MOTO-01-AC04 | `A 205 906 22 03`, `a2059062203` and `A-205.906.22.03` are treated as the same number | US1 |
 | MOTO-01-AC05 | An invalid VIN shows the inline error and sends no request | US1 |
 | MOTO-01-AC06 | A valid but unknown VIN shows the unknown VIN message | US1 |

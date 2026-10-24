@@ -1,0 +1,22 @@
+/* Figma "Demo tokens" values the theme in app/globals.css does not carry yet. */
+:root {
+  --fitment-ok-soft: #eaf7ee;
+  --fitment-ok-line: #9edbb3;
+  --fitment-ok-fg: #0e4625;
+  --fitment-ok-icon: #1e8a4a;
+  --fitment-warn-soft: #fff6e0;
+  --fitment-warn-line: #ffd47a;
+  --fitment-warn-fg: #553500;
+  --fitment-warn-icon: #b87400;
+  --fitment-red-soft: #fff1f2;
+  --fitment-red-line: #ffc2c6;
+  --fitment-red-fg: #7f000c;
+  --fitment-ink-3: #344054;
+  --fitment-fg-2: #475467;
+  --fitment-fg-4: #98a2b3;
+  --fitment-line: #e4e7ec;
+  --fitment-line-2: #d0d5dd;
+  --fitment-canvas-2: #f2f4f7;
+  --fitment-photo: #e9ebee;
+  --fitment-dk-muted: #d0d5dd;
+}

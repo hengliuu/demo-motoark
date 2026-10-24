@@ -1,0 +1,249 @@
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { QueryProvider } from "@/lib/query-provider";
+import { FitmentCheck } from "./FitmentCheck";
+
+const VEHICLE = { vin: "WDD2050421R123456", make: "Mercedes-Benz", model: "C 200", chassis: "W205", year: 2019 };
+
+const FITS_BODY = {
+  result: "fits",
+  vehicle: VEHICLE,
+  part: { number: "A0004204102", name: "Front brake pad set" },
+  resolved: { number: "A0004204102", name: "Front brake pad set", chain: ["A0004204102"] },
+  listings: [
+    { id: "L-1001", yard: "Al Quoz Auto Recyclers", grade: "A", price_aed: 899, warranty_days: 30, delivery: "Next day" },
+    { id: "L-1002", yard: "Sharjah Parts Yard", grade: "B", price_aed: 1250, warranty_days: 14, delivery: "2 to 3 days" },
+  ],
+};
+
+const SUPERSEDED_BODY = {
+  result: "superseded",
+  vehicle: VEHICLE,
+  part: { number: "A2059062203", name: "Headlamp, left" },
+  resolved: { number: "A2059065903", name: "Headlamp, left", chain: ["A2059062203", "A2059065903"] },
+  listings: [
+    { id: "L-2001", yard: "Sharjah Parts Yard", grade: "A", price_aed: 1250, warranty_days: 30, delivery: "Next day" },
+  ],
+};
+
+const NO_FIT_BODY = {
+  result: "no_fit",
+  vehicle: VEHICLE,
+  part: { number: "A1669060103", name: "Headlamp, left (W166)" },
+  resolved: { number: "A1669060103", name: "Headlamp, left (W166)", chain: ["A1669060103"] },
+  listings: [],
+};
+
+function jsonResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+}
+
+function stubFetch(...responses: Array<Response | Error>): ReturnType<typeof vi.fn> {
+  const queue = [...responses];
+  const fetchMock = vi.fn(() => {
+    const next = queue.shift() ?? responses[responses.length - 1];
+    return next instanceof Error ? Promise.reject(next) : Promise.resolve(next);
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
+}
+
+async function fillAndSubmit(part: string, vin: string) {
+  const user = userEvent.setup();
+  render(
+    <QueryProvider>
+      <FitmentCheck />
+    </QueryProvider>,
+  );
+  await user.type(screen.getByLabelText("Part number"), part);
+  await user.type(screen.getByLabelText("VIN"), vin);
+  await user.click(screen.getByRole("button", { name: "Check fitment" }));
+  return user;
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+describe("FitmentCheck", () => {
+  it("MOTO-01-TC24 shows the empty state with the form and the VIN hint", () => {
+    render(
+      <QueryProvider>
+        <FitmentCheck />
+      </QueryProvider>,
+    );
+    expect(screen.getByRole("heading", { name: "Will this part fit your car?" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Part number")).toBeInTheDocument();
+    expect(screen.getByLabelText("VIN")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Check fitment" })).toBeEnabled();
+    expect(screen.getByText("Where to find your VIN")).toBeInTheDocument();
+  });
+
+  it("MOTO-01-TC05 a 16-character VIN shows the inline error and sends no request", async () => {
+    const fetchMock = stubFetch(jsonResponse(FITS_BODY));
+    await fillAndSubmit("A0004204102", "WDD2050421R12345");
+    expect(await screen.findByText("Enter the 17-character VIN from your registration card")).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("MOTO-01-TC01 a fitting part shows the Fits banner, the vehicle and the listings with Tabby lines", async () => {
+    stubFetch(jsonResponse(FITS_BODY));
+    await fillAndSubmit("A 000 420 41 02", "wdd2050421r123456");
+    expect(await screen.findByText("Fits your vehicle")).toBeInTheDocument();
+    expect(
+      screen.getByText("A 000 420 41 02 is listed for this Mercedes-Benz C 200 (W205, 2019) in the official catalogue."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("AED 899")).toBeInTheDocument();
+    expect(screen.getByText("or 4 payments of AED 224.75 with Tabby")).toBeInTheDocument();
+    expect(screen.getByText("AED 1,250")).toBeInTheDocument();
+    expect(screen.getByText("or 4 payments of AED 312.50 with Tabby")).toBeInTheDocument();
+    expect(screen.getByText("2 sellers have this part")).toBeInTheDocument();
+  });
+
+  it("MOTO-01-TC04 the request carries the normalised part number", async () => {
+    const fetchMock = stubFetch(jsonResponse(FITS_BODY));
+    await fillAndSubmit("a-000.420 41 02", "WDD2050421R123456");
+    await screen.findByText("Fits your vehicle");
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain("part=A0004204102");
+  });
+
+  it("MOTO-01-TC17 the request carries the VIN trimmed and uppercased", async () => {
+    const fetchMock = stubFetch(jsonResponse(FITS_BODY));
+    await fillAndSubmit("A0004204102", "  wdd2050421r123456 ");
+    await screen.findByText("Fits your vehicle");
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain("vin=WDD2050421R123456");
+  });
+
+  it("MOTO-01-TC02 a superseded part shows the amber banner with the old and the new number", async () => {
+    stubFetch(jsonResponse(SUPERSEDED_BODY));
+    await fillAndSubmit("A2059062203", "WDD2050421R123456");
+    expect(await screen.findByText("Superseded, and the new number fits")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "A 205 906 22 03 was replaced by A 205 906 59 03, which fits this Mercedes-Benz C 200. The listings below are for the new number.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("MOTO-01-TC02 the superseded summary shows old to new number and what the buyer typed", async () => {
+    stubFetch(jsonResponse(SUPERSEDED_BODY));
+    await fillAndSubmit("A-205.906.22.03", "WDD2050421R123456");
+    const summary = await screen.findByRole("region", { name: "Vehicle and part checked" });
+    expect(within(summary).getByText("You searched A-205.906.22.03")).toBeInTheDocument();
+    expect(within(summary).getByText("A 205 906 22 03 \u2192 A 205 906 59 03")).toBeInTheDocument();
+    expect(within(summary).getByText("Headlamp, left")).toBeInTheDocument();
+    expect(within(summary).queryByText("OEM part number")).not.toBeInTheDocument();
+  });
+
+  it("MOTO-01-TC02 the superseded listings header says the sellers have the new part", async () => {
+    stubFetch(jsonResponse({ ...SUPERSEDED_BODY, listings: [...SUPERSEDED_BODY.listings, { ...SUPERSEDED_BODY.listings[0], id: "L-2002" }] }));
+    await fillAndSubmit("A2059062203", "WDD2050421R123456");
+    expect(await screen.findByRole("heading", { name: "2 sellers have the new part" })).toBeInTheDocument();
+  });
+
+  it("MOTO-01-TC02 one superseded seller reads 1 seller has the new part", async () => {
+    stubFetch(jsonResponse(SUPERSEDED_BODY));
+    await fillAndSubmit("A2059062203", "WDD2050421R123456");
+    expect(await screen.findByRole("heading", { name: "1 seller has the new part" })).toBeInTheDocument();
+  });
+
+  it("MOTO-01-TC22 listings say sorted by lowest price as plain text, with no sort control", async () => {
+    stubFetch(jsonResponse(FITS_BODY));
+    await fillAndSubmit("A0004204102", "WDD2050421R123456");
+    expect(await screen.findByText("Sorted by lowest price")).toBeInTheDocument();
+    expect(screen.queryByText("Sort: Lowest price")).not.toBeInTheDocument();
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /sort/i })).not.toBeInTheDocument();
+  });
+
+  it("MOTO-01-TC03 a part that does not fit shows the red banner and a way to check another part", async () => {
+    stubFetch(jsonResponse(NO_FIT_BODY));
+    await fillAndSubmit("A1669060103", "WDD2050421R123456");
+    expect(await screen.findByText("Does not fit this vehicle")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Find parts that fit your C 200" })).toBeInTheDocument();
+    expect(
+      screen.getByText("Check another part number for your C 200 (W205). Your VIN stays filled in."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Check another part" })).toBeInTheDocument();
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    expect(screen.queryByText(/sellers? has? this part|sellers have this part/)).not.toBeInTheDocument();
+  });
+
+  it("MOTO-01-TC03 check another part keeps the VIN and clears the part number", async () => {
+    stubFetch(jsonResponse(NO_FIT_BODY));
+    const user = await fillAndSubmit("A1669060103", "WDD2050421R123456");
+    await user.click(await screen.findByRole("button", { name: "Check another part" }));
+    expect(screen.queryByText("Does not fit this vehicle")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("VIN")).toHaveValue("WDD2050421R123456");
+    expect(screen.getByLabelText("Part number")).toHaveValue("");
+    expect(screen.getByLabelText("Part number")).toHaveFocus();
+  });
+
+  it("MOTO-01-TC07 an unknown VIN shows the message under the VIN field and keeps the form", async () => {
+    stubFetch(
+      jsonResponse(
+        { error: { code: "unknown_vin", message: "We couldn't find this VIN. Check it against your registration card" } },
+        404,
+      ),
+    );
+    await fillAndSubmit("A0004204102", "WDD2050421R999999");
+    expect(
+      await screen.findByText("We couldn't find this VIN. Check it against your registration card"),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("VIN")).toHaveValue("WDD2050421R999999");
+  });
+
+  it.each([
+    { code: "invalid_vin", message: "Enter the 17-character VIN from your registration card", label: "VIN" },
+    { code: "invalid_part", message: "Enter a part number", label: "Part number" },
+  ])("MOTO-01-TC19 a server 400 $code shows its message under $label", async ({ code, message, label }) => {
+    stubFetch(jsonResponse({ error: { code, message } }, 400));
+    await fillAndSubmit("A0004204102", "WDD2050421R123456");
+
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(screen.getByLabelText(label)).toHaveAccessibleDescription(message);
+    expect(screen.getByLabelText(label)).toBeInvalid();
+    expect(screen.queryByText("Fitment check is unavailable right now")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument();
+  });
+
+  it("MOTO-01-TC10 an unavailable API shows Try again, and Try again retries the same values", async () => {
+    const fetchMock = stubFetch(new TypeError("Failed to fetch"), jsonResponse(FITS_BODY));
+    const user = await fillAndSubmit("A0004204102", "WDD2050421R123456");
+    expect(await screen.findByText("Fitment check is unavailable right now")).toBeInTheDocument();
+    expect(screen.getByLabelText("Part number")).toHaveValue("A0004204102");
+
+    await user.click(screen.getByRole("button", { name: "Try again" }));
+
+    expect(await screen.findByText("Fits your vehicle")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(String(fetchMock.mock.calls[1]?.[0])).toBe(String(fetchMock.mock.calls[0]?.[0]));
+  });
+
+  it("MOTO-01-TC16 disables the button, marks it busy and shows the skeleton while the check runs", async () => {
+    let resolveFetch: (response: Response) => void = () => {};
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>((resolve) => (resolveFetch = resolve))),
+    );
+    await fillAndSubmit("A0004204102", "WDD2050421R123456");
+
+    const button = await screen.findByRole("button", { name: "Check fitment" });
+    await waitFor(() => expect(button).toBeDisabled());
+    expect(button).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByRole("status")).toHaveTextContent("Checking fitment");
+
+    resolveFetch(jsonResponse(FITS_BODY));
+    expect(await screen.findByText("Fits your vehicle")).toBeInTheDocument();
+  });
+
+  it("MOTO-01-TC22 New search returns to an empty form", async () => {
+    stubFetch(jsonResponse(FITS_BODY));
+    const user = await fillAndSubmit("A0004204102", "WDD2050421R123456");
+    await screen.findByText("Fits your vehicle");
+    await user.click(screen.getByRole("button", { name: "New search" }));
+    expect(screen.getByLabelText("Part number")).toHaveValue("");
+    expect(screen.getByLabelText("VIN")).toHaveValue("");
+  });
+});
