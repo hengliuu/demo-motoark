@@ -7,7 +7,7 @@ import (
 	"fmt"
 )
 
-type Repository interface {
+type repository interface {
 	FindVehicle(ctx context.Context, vin string) (Vehicle, error)
 	FindPart(ctx context.Context, number string) (Part, bool)
 	ListListings(ctx context.Context, partNumber string) []Listing
@@ -47,7 +47,7 @@ type seedFile struct {
 	} `json:"listings"`
 }
 
-func NewSeedRepository() (Repository, error) {
+func newSeedRepository() (repository, error) {
 	var f seedFile
 	if err := json.Unmarshal(seedJSON, &f); err != nil {
 		return nil, fmt.Errorf("parse fitment seed: %w", err)

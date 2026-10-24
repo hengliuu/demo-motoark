@@ -26,7 +26,7 @@ func (f fakeRepo) ListListings(context.Context, string) []Listing { return nil }
 
 func seedService(t *testing.T) *Service {
 	t.Helper()
-	repo, err := NewSeedRepository()
+	repo, err := newSeedRepository()
 	if err != nil {
 		t.Fatalf("seed: %v", err)
 	}

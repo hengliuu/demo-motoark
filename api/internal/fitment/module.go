@@ -7,7 +7,7 @@ import (
 )
 
 func RegisterRoutes(r gin.IRouter, log *slog.Logger) error {
-	repo, err := NewSeedRepository()
+	repo, err := newSeedRepository()
 	if err != nil {
 		return err
 	}

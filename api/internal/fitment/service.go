@@ -11,10 +11,10 @@ import (
 const maxSupersessionHops = 5
 
 type Service struct {
-	repo Repository
+	repo repository
 }
 
-func New(repo Repository) *Service { return &Service{repo: repo} }
+func New(repo repository) *Service { return &Service{repo: repo} }
 
 func (s *Service) NormalizePart(raw string) (string, error) {
 	n := strings.ToUpper(strings.NewReplacer(" ", "", ".", "", "-", "").Replace(raw))
